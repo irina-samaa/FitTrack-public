@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<!--
+  schedule.fxml — Màn hình quản lý nhắc nhở.
+  Controller: ScheduleController.java
+-->
+<VBox xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.fittrack.controller.ScheduleController"
+      spacing="16"
+      style="-fx-padding: 24; -fx-background-color: #0F0F0F;">
+
+    <Label text="Schedule" styleClass="screen-title" />
+
+    <!-- Label hiện reminder tiếp theo (từ đầu min-heap) -->
+    <!--
+      GỌI BACKEND: ReminderService.getNextReminder() → Reminder.getLabel() / getScheduledTime()
+    -->
+    <Label fx:id="nextReminderLabel"
+           styleClass="card-subtitle"
+           style="-fx-text-fill: #00E5FF; -fx-font-size: 14;" />
+
+    <!-- ===== BẢNG REMINDERS ===== -->
+    <VBox styleClass="card" spacing="8" VBox.vgrow="ALWAYS">
+        <Label text="UPCOMING REMINDERS" styleClass="card-title-accent" />
+
+        <!--
+          TableView hiện tất cả reminders (sorted từ PriorityQueue).
+          GỌI BACKEND: ReminderService.getAllReminders()
+          → Reminder.getLabel() + getScheduledTime()
+        -->
+        <TableView fx:id="reminderTable"
+                   styleClass="dark-table"
+                   VBox.vgrow="ALWAYS">
+            <columns>
+                <TableColumn fx:id="labelColumn" text="Reminder" minWidth="200" />
+                <TableColumn fx:id="timeColumn" text="Scheduled Time" minWidth="200" />
+            </columns>
+            <placeholder>
+                <Label text="No reminders yet. Add one below!"
+                       style="-fx-text-fill: #666;" />
+            </placeholder>
+        </TableView>
+
+        <!-- Nút Remove Next -->
+        <HBox alignment="CENTER_RIGHT">
+            <!--
+              GỌI BACKEND: ReminderService.getNextReminder() (xem trước)
+                         + ReminderService.removeNextReminder() (poll từ min-heap)
+            -->
+            <Button text="✕ Remove Next Reminder"
+                    styleClass="danger-button"
+                    onAction="#removeNextReminder" />
+        </HBox>
+    </VBox>
+
+    <!-- ===== FORM THÊM REMINDER ===== -->
+    <VBox styleClass="card" spacing="10">
+        <Label text="ADD REMINDER" styleClass="card-title-accent" />
+
+        <HBox spacing="12" alignment="CENTER_LEFT">
+
+            <VBox spacing="4" HBox.hgrow="ALWAYS">
+                <Label text="LABEL" styleClass="field-label" />
+                <TextField fx:id="reminderLabelField"
+                           promptText="e.g. Chest Day, Leg Day..."
+                           styleClass="dark-input" />
+            </VBox>
+
+            <VBox spacing="4" HBox.hgrow="ALWAYS">
+                <Label text="DATE &amp; TIME (yyyy-MM-dd HH:mm)" styleClass="field-label" />
+                <TextField fx:id="reminderTimeField"
+                           promptText="2025-06-15 09:00"
+                           styleClass="dark-input" />
+            </VBox>
+
+            <!--
+              GỌI BACKEND: ReminderService.scheduleReminder(label, time)
+              → Tạo Reminder mới và thêm vào PriorityQueue min-heap
+            -->
+            <Button text="＋ Add"
+                    styleClass="primary-button"
+                    onAction="#addReminder"
+                    style="-fx-padding: 8 20;"
+                    VBox.vgrow="ALWAYS" />
+        </HBox>
+    </VBox>
+
+    <!-- ===== RECOVERY DAYS SETTING ===== -->
+    <HBox styleClass="card" spacing="16" alignment="CENTER_LEFT">
+        <Label text="RECOVERY DAYS" styleClass="card-title-accent" />
+        <Label fx:id="recoveryDaysInfo" styleClass="subtitle-text" />
+
+        <Region HBox.hgrow="ALWAYS" />
+
+        <TextField fx:id="recoveryDaysField"
+                   styleClass="dark-input"
+                   prefWidth="60"
+                   alignment="CENTER" />
+        <!--
+          GỌI BACKEND: ReminderService.setRecoveryDays(days)
+        -->
+        <Button text="Save" styleClass="accent-button"
+                onAction="#saveRecoveryDays" />
+    </HBox>
+
+</VBox>

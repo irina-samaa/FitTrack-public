@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<!--
+  health.fxml — Màn hình theo dõi sức khỏe và BMI.
+  Controller: HealthController.java
+-->
+<VBox xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.fittrack.controller.HealthController"
+      spacing="20"
+      style="-fx-padding: 32; -fx-background-color: #0F0F0F;">
+
+    <Label text="Health Metrics" styleClass="screen-title" />
+
+    <!-- Hiện giá trị hiện tại -->
+    <!--
+      GỌI BACKEND: HealthMetrics.getWeight() + getHeight()
+    -->
+    <HBox spacing="24">
+        <Label fx:id="currentWeightLabel" styleClass="subtitle-text" />
+        <Label fx:id="currentHeightLabel" styleClass="subtitle-text" />
+    </HBox>
+
+    <!-- ===== FORM INPUT ===== -->
+    <VBox styleClass="card" spacing="14">
+        <Label text="UPDATE MEASUREMENTS" styleClass="card-title-accent" />
+
+        <HBox spacing="16">
+
+            <!-- Weight Input -->
+            <VBox spacing="6" HBox.hgrow="ALWAYS">
+                <Label text="WEIGHT (kg)" styleClass="field-label" />
+                <TextField fx:id="weightField"
+                           promptText="e.g. 70.5"
+                           styleClass="dark-input" />
+            </VBox>
+
+            <!-- Height Input -->
+            <VBox spacing="6" HBox.hgrow="ALWAYS">
+                <Label text="HEIGHT (cm)" styleClass="field-label" />
+                <TextField fx:id="heightField"
+                           promptText="e.g. 175"
+                           styleClass="dark-input" />
+            </VBox>
+
+            <!--
+              GỌI BACKEND: HealthMetrics.updateWeight(kg) + updateHeight(cm)
+              Lưu ý: updateWeight() APPEND vào weightHistory!
+            -->
+            <Button text="Update"
+                    styleClass="primary-button"
+                    onAction="#handleUpdate"
+                    style="-fx-padding: 8 24;" />
+        </HBox>
+    </VBox>
+
+    <!-- ===== KẾT QUẢ BMI ===== -->
+    <HBox spacing="20">
+
+        <!-- BMI Number Card (to, đậm) -->
+        <VBox styleClass="card" spacing="8" alignment="CENTER"
+              HBox.hgrow="ALWAYS" style="-fx-min-width: 180;">
+            <Label text="BMI" styleClass="card-title-accent" />
+            <!--
+              GỌI BACKEND: HealthMetrics.calculateBMI()
+            -->
+            <Label fx:id="bmiResultLabel"
+                   styleClass="bmi-number"
+                   style="-fx-font-size: 56; -fx-font-weight: bold; -fx-text-fill: #FF4500;" />
+
+            <!--
+              GỌI BACKEND: HealthMetrics.getBMICategory()
+              Color-coded bởi HealthController.calculateAndDisplay()
+            -->
+            <Label fx:id="bmiCategoryBadge" text="—" />
+        </VBox>
+
+        <!-- Recommendation Card -->
+        <VBox styleClass="card" spacing="8" HBox.hgrow="ALWAYS">
+            <Label text="RECOMMENDATION" styleClass="card-title-accent" />
+            <!--
+              GỌI BACKEND: HealthMetrics.getHealthRecommendation()
+            -->
+            <Label fx:id="recommendationLabel"
+                   styleClass="body-text"
+                   wrapText="true"
+                   style="-fx-font-size: 15; -fx-text-fill: #AAAAAA;" />
+
+            <!-- BMI Reference Table (hardcoded) -->
+            <Separator />
+            <Label text="BMI Categories:" styleClass="field-label" />
+            <Label text="&lt; 18.5 → Underweight" style="-fx-text-fill: #00E5FF; -fx-font-size: 12;" />
+            <Label text="18.5 – 24.9 → Normal" style="-fx-text-fill: #39FF14; -fx-font-size: 12;" />
+            <Label text="25 – 29.9 → Overweight" style="-fx-text-fill: #FFD700; -fx-font-size: 12;" />
+            <Label text="≥ 30 → Obese" style="-fx-text-fill: #FF4500; -fx-font-size: 12;" />
+        </VBox>
+
+    </HBox>
+
+</VBox>

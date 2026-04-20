@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<!--
+  main.fxml — Cửa sổ chính với sidebar và content area.
+  Controller: MainController.java
+  Layout: BorderPane (LEFT = sidebar, TOP = topbar, CENTER = content)
+-->
+<BorderPane fx:id="mainPane" xmlns:fx="http://javafx.com/fxml"
+            fx:controller="com.fittrack.controller.MainController"
+            style="-fx-background-color: #0F0F0F;">
+
+    <!-- ===== TOP BAR ===== -->
+    <top>
+        <HBox styleClass="top-bar" alignment="CENTER_LEFT" spacing="12">
+            <!-- App name bên trái -->
+            <Label text="🔥 FitTrack" styleClass="app-title-small" />
+
+            <!-- Spacer đẩy username + buttons sang phải -->
+            <Region HBox.hgrow="ALWAYS" />
+
+            <!-- Username -->
+            <Label fx:id="usernameLabel" styleClass="username-label" />
+
+            <!-- Settings button -->
+            <Button text="⚙" styleClass="icon-button" onAction="#openSettings" />
+
+            <!-- Logout button -->
+            <Button text="🚪 Logout" styleClass="danger-button" onAction="#handleLogout" />
+        </HBox>
+    </top>
+
+    <!-- ===== SIDEBAR (bên trái) ===== -->
+    <left>
+        <VBox styleClass="sidebar" spacing="4" style="-fx-padding: 16 8;">
+
+            <!-- Nav buttons — mỗi button gọi navigateTo() trong MainController -->
+            <Button text="🏠  Home"
+                    styleClass="sidebar-button"
+                    maxWidth="Infinity"
+                    onAction="#goHome" />
+
+            <Button text="💪  Workout"
+                    styleClass="sidebar-button"
+                    maxWidth="Infinity"
+                    onAction="#goWorkout" />
+
+            <Button text="📅  Schedule"
+                    styleClass="sidebar-button"
+                    maxWidth="Infinity"
+                    onAction="#goSchedule" />
+
+            <Button text="❤  Health"
+                    styleClass="sidebar-button"
+                    maxWidth="Infinity"
+                    onAction="#goHealth" />
+
+            <Button text="📈  Progress"
+                    styleClass="sidebar-button"
+                    maxWidth="Infinity"
+                    onAction="#goProgress" />
+
+            <!-- Spacer đẩy version xuống đáy -->
+            <Region VBox.vgrow="ALWAYS" />
+
+            <Label text="FitTrack v1.0" styleClass="hint-text"
+                   style="-fx-text-fill: #444; -fx-padding: 8 4;" />
+        </VBox>
+    </left>
+
+    <!-- ===== CENTER: Content area — được swap bởi MainController.navigateTo() ===== -->
+    <center>
+        <!--
+          Vùng này sẽ được thay thế động bằng:
+          - dashboard.fxml (mặc định)
+          - workout.fxml
+          - schedule.fxml
+          - health.fxml
+          - progress.fxml
+          Xem MainController.navigateTo() để biết cách hoạt động.
+        -->
+        <StackPane fx:id="contentArea" style="-fx-background-color: #0F0F0F;" />
+    </center>
+
+</BorderPane>

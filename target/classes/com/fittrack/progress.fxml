@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.chart.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<!--
+  progress.fxml — Màn hình biểu đồ cân nặng.
+  Controller: ProgressController.java
+-->
+<VBox xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.fittrack.controller.ProgressController"
+      spacing="16"
+      style="-fx-padding: 24; -fx-background-color: #0F0F0F;">
+
+    <Label text="Progress" styleClass="screen-title" />
+
+    <!-- Toolbar: ComboBox chọn window + nút Refresh -->
+    <HBox spacing="12" alignment="CENTER_LEFT" styleClass="card">
+        <Label text="MOVING AVERAGE WINDOW:" styleClass="field-label" />
+
+        <!--
+          GỌI BACKEND: ProgressTracker.getMovingAverage(window)
+          ComboBox chứa [2, 3, 5] — thay đổi window thì refresh chart
+        -->
+        <ComboBox fx:id="windowComboBox" styleClass="dark-combo" />
+
+        <Label text="entries" styleClass="subtitle-text" />
+
+        <Region HBox.hgrow="ALWAYS" />
+
+        <Button text="↺ Refresh" styleClass="accent-button"
+                onAction="#refreshChart" />
+    </HBox>
+
+    <!-- ===== LINECHART ===== -->
+    <!--
+      2 Series:
+      Series 1 "Weight (kg)" — GỌI BACKEND: HealthMetrics.getWeightHistory()
+      Series 2 "Moving Avg"  — GỌI BACKEND: ProgressTracker.getMovingAverage(window)
+      Labels X-axis          — GỌI BACKEND: ProgressTracker.getLabels()
+    -->
+    <LineChart fx:id="weightChart"
+               styleClass="dark-chart"
+               VBox.vgrow="ALWAYS"
+               animated="true"
+               createSymbols="true">
+
+        <xAxis>
+            <CategoryAxis label="Time" />
+        </xAxis>
+        <yAxis>
+            <NumberAxis label="Weight (kg)" autoRanging="true" />
+        </yAxis>
+
+    </LineChart>
+
+    <!-- ===== STAT CARDS ===== -->
+    <HBox spacing="12">
+
+        <VBox styleClass="card" spacing="4" alignment="CENTER" HBox.hgrow="ALWAYS">
+            <Label text="MIN" styleClass="field-label" />
+            <Label fx:id="minWeightLabel" styleClass="card-big-number"
+                   style="-fx-font-size: 20;" />
+        </VBox>
+
+        <VBox styleClass="card" spacing="4" alignment="CENTER" HBox.hgrow="ALWAYS">
+            <Label text="MAX" styleClass="field-label" />
+            <Label fx:id="maxWeightLabel" styleClass="card-big-number"
+                   style="-fx-font-size: 20;" />
+        </VBox>
+
+        <VBox styleClass="card" spacing="4" alignment="CENTER" HBox.hgrow="ALWAYS">
+            <Label text="AVG" styleClass="field-label" />
+            <Label fx:id="avgWeightLabel" styleClass="card-big-number"
+                   style="-fx-font-size: 20;" />
+        </VBox>
+
+        <VBox styleClass="card" spacing="4" alignment="CENTER" HBox.hgrow="ALWAYS">
+            <Label text="ENTRIES" styleClass="field-label" />
+            <Label fx:id="totalEntriesLabel" styleClass="card-big-number"
+                   style="-fx-font-size: 20;" />
+        </VBox>
+
+    </HBox>
+
+</VBox>

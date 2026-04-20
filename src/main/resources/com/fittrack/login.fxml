@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.*?>
+
+<!--
+  login.fxml — Màn hình đăng nhập dạng popup.
+  Controller: LoginController.java
+-->
+<VBox xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.fittrack.controller.LoginController"
+      styleClass="dark-panel"
+      alignment="CENTER"
+      spacing="16"
+      style="-fx-padding: 40; -fx-background-color: #0F0F0F;">
+
+    <!-- Logo / App Name -->
+    <Label text="🔥 FitTrack" styleClass="app-title" />
+    <Label text="Your personal fitness companion" styleClass="subtitle-text" />
+
+    <Separator style="-fx-background-color: #333; -fx-padding: 4 0;" />
+
+    <!-- Username Field -->
+    <VBox spacing="4">
+        <Label text="USERNAME" styleClass="field-label" />
+        <TextField fx:id="usernameField"
+                   promptText="Enter username"
+                   styleClass="dark-input"
+                   onKeyTyped="#clearError" />
+    </VBox>
+
+    <!-- Password Field -->
+    <VBox spacing="4">
+        <Label text="PASSWORD" styleClass="field-label" />
+        <PasswordField fx:id="passwordField"
+                       promptText="Enter password"
+                       styleClass="dark-input"
+                       onKeyTyped="#clearError"
+                       onAction="#handleLogin" />
+    </VBox>
+
+    <!-- Error Message — ẩn mặc định -->
+    <Label fx:id="errorLabel"
+           text="Invalid credentials"
+           styleClass="error-label"
+           visible="false"
+           managed="false" />
+           <!-- managed="false" để không chiếm chỗ khi ẩn -->
+
+    <!-- Login Button -->
+    <Button text="LOGIN"
+            styleClass="primary-button"
+            onAction="#handleLogin"
+            maxWidth="Infinity"
+            defaultButton="true" />
+
+    <Label text="Test account: admin / 1234"
+           styleClass="hint-text"
+           style="-fx-text-fill: #555;" />
+
+</VBox>

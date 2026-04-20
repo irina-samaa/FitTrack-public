@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<!--
+  dashboard.fxml — Màn hình Home, hiện 3 card tóm tắt.
+  Controller: DashboardController.java
+-->
+<VBox xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.fittrack.controller.DashboardController"
+      spacing="24"
+      style="-fx-padding: 32; -fx-background-color: #0F0F0F;">
+
+    <!-- Tiêu đề -->
+    <Label text="Dashboard" styleClass="screen-title" />
+    <Label text="Here's your fitness overview for today."
+           styleClass="subtitle-text" />
+
+    <!-- ===== 3 SUMMARY CARDS (nằm ngang) ===== -->
+    <HBox spacing="20">
+
+        <!-- Card 1: Today's Workout -->
+        <VBox styleClass="card" spacing="8" HBox.hgrow="ALWAYS">
+            <Label text="TODAY'S WORKOUT" styleClass="card-title-accent" />
+            <!-- DashboardController.loadWorkoutCard() bind vào 2 label này -->
+            <!-- GỌI BACKEND: DataStore.getSessions() + WorkoutSession.getSessionName() -->
+            <Label fx:id="sessionCountLabel" styleClass="card-big-number" />
+            <Label fx:id="lastSessionLabel" styleClass="card-subtitle" />
+        </VBox>
+
+        <!-- Card 2: Current BMI -->
+        <VBox styleClass="card" spacing="8" HBox.hgrow="ALWAYS">
+            <Label text="CURRENT BMI" styleClass="card-title-accent" />
+            <!-- GỌI BACKEND: HealthMetrics.calculateBMI() + getBMICategory() -->
+            <Label fx:id="bmiValueLabel" styleClass="card-big-number" />
+            <Label fx:id="bmiCategoryLabel" styleClass="card-subtitle" />
+        </VBox>
+
+        <!-- Card 3: Next Reminder -->
+        <VBox styleClass="card" spacing="8" HBox.hgrow="ALWAYS">
+            <Label text="NEXT REMINDER" styleClass="card-title-accent" />
+            <!-- GỌI BACKEND: ReminderService.getNextReminder() → Reminder.getLabel() / getScheduledTime() -->
+            <Label fx:id="nextReminderLabel" styleClass="card-subtitle"
+                   wrapText="true" />
+        </VBox>
+
+    </HBox>
+
+    <!-- ===== MOTIVATION QUOTE ===== -->
+    <VBox styleClass="card" spacing="8" style="-fx-background-color: #1a0a00; -fx-border-color: #FF4500;">
+        <Label text="DAILY MOTIVATION" styleClass="card-title-accent" />
+        <!-- Random quote từ hardcoded array trong DashboardController -->
+        <Label fx:id="motivationLabel"
+               styleClass="motivation-text"
+               wrapText="true" />
+    </VBox>
+
+</VBox>
