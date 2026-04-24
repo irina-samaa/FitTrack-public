@@ -154,12 +154,8 @@ public class FitnessTrackerService {
         return dataStore.getReminderService().getReminder(requireCurrentUser(), bodyPartName);
     }
 
-    public Reminder getTopDueReminder() {
-        return dataStore.getReminderService().getTopDueReminder(requireCurrentUser());
-    }
-
-    public Reminder getAnnouncementReminder() {
-        return dataStore.getReminderService().getAnnouncementReminder(requireCurrentUser());
+    public Reminder getNextReminder() {
+        return dataStore.getReminderService().getNextReminder(requireCurrentUser());
     }
 
     public void createOrUpdateReminder(String bodyPartName, Integer thresholdDays, String note) {

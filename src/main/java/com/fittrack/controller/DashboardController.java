@@ -134,23 +134,36 @@ public class DashboardController {
         int dueReminderCount = service.getDueReminderCount();
         upcomingCountLabel.setText(dueReminderCount + " reminder" + (dueReminderCount == 1 ? "" : "s") + " due");
 
-        Reminder announcementReminder = service.getAnnouncementReminder();
-        if (announcementReminder == null) {
+        Reminder nextReminder = service.getNextReminder();
+        if (nextReminder == null) {
             reminderTitleLabel.setText("No reminder loaded");
-            reminderTimeLabel.setText("Threshold countdown starts after the first logged workout for each body part.");
+            reminderTimeLabel.setText("Log a workout first so the reminder countdown can start.");
             return;
         }
 
-        int inactiveDays = service.getInactiveDays(announcementReminder);
-        reminderTitleLabel.setText(announcementReminder.getTitle());
-        if (service.isReminderDue(announcementReminder)) {
-            reminderTimeLabel.setText(announcementReminder.formatStatusMessage(inactiveDays));
+        int inactiveDays = service.getInactiveDays(nextReminder);
+        reminderTitleLabel.setText(nextReminder.getTitle());
+        if (service.isReminderDue(nextReminder)) {
+            reminderTimeLabel.setText(buildReminderText(nextReminder, inactiveDays, true));
             return;
         }
 
-        int remainingDays = Math.max(service.getDaysRemaining(announcementReminder), 0);
-        reminderTimeLabel.setText(inactiveDays + " inactive day" + (inactiveDays == 1 ? "" : "s")
-            + " | " + remainingDays + " day" + (remainingDays == 1 ? "" : "s") + " until reminder");
+        reminderTimeLabel.setText(buildReminderText(nextReminder, inactiveDays, false));
+    }
+
+    private String buildReminderText(Reminder reminder, int inactiveDays, boolean due) {
+        String text = inactiveDays + " inactive day" + (inactiveDays == 1 ? "" : "s");
+        if (due) {
+            text += " | due now";
+        } else {
+            int remainingDays = Math.max(service.getDaysRemaining(reminder), 0);
+            text += " | " + remainingDays + " day" + (remainingDays == 1 ? "" : "s") + " left";
+        }
+
+        if (reminder.getNote() != null) {
+            text += " | " + reminder.getNote();
+        }
+        return text;
     }
 
     private void loadMotivationQuote() {

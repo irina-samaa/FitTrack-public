@@ -1,7 +1,5 @@
 package com.fittrack.model;
 
-import java.util.Objects;
-
 public class Reminder {
     public static final int DEFAULT_THRESHOLD_DAYS = 5;
 
@@ -15,20 +13,11 @@ public class Reminder {
         }
 
         this.bodyPartName = bodyPartName.trim();
-        int resolvedThreshold = thresholdDays == null ? DEFAULT_THRESHOLD_DAYS : thresholdDays;
-        if (resolvedThreshold <= 0) {
-            throw new IllegalArgumentException("Threshold days must be greater than 0.");
-        }
-        this.thresholdDays = resolvedThreshold;
-        this.note = (note == null || note.isBlank()) ? null : note.trim();
+        update(thresholdDays, note);
     }
 
     public String getBodyPartName() {
         return bodyPartName;
-    }
-
-    public String getTitle() {
-        return bodyPartName + " reminder";
     }
 
     public int getThresholdDays() {
@@ -39,42 +28,32 @@ public class Reminder {
         return note;
     }
 
+    public String getTitle() {
+        return bodyPartName + " reminder";
+    }
+
     public void update(Integer thresholdDays, String note) {
+        this.thresholdDays = resolveThresholdDays(thresholdDays);
+        this.note = cleanNote(note);
+    }
+
+    private int resolveThresholdDays(Integer thresholdDays) {
         int resolvedThreshold = thresholdDays == null ? DEFAULT_THRESHOLD_DAYS : thresholdDays;
         if (resolvedThreshold <= 0) {
             throw new IllegalArgumentException("Threshold days must be greater than 0.");
         }
-        this.thresholdDays = resolvedThreshold;
-        this.note = (note == null || note.isBlank()) ? null : note.trim();
+        return resolvedThreshold;
     }
 
-    public String formatStatusMessage(int inactiveDays) {
-        int safeInactiveDays = Math.max(inactiveDays, 0);
-        return safeInactiveDays + " inactive day" + (safeInactiveDays == 1 ? "" : "s")
-            + " | goal: every " + thresholdDays + " day" + (thresholdDays == 1 ? "" : "s")
-            + (note == null ? "" : " | " + note);
-    }
-
-    @Override
-    public boolean equals(Object object) {
-        if (this == object) {
-            return true;
+    private String cleanNote(String note) {
+        if (note == null) {
+            return null;
         }
-        if (!(object instanceof Reminder other)) {
-            return false;
+
+        String trimmedNote = note.trim();
+        if (trimmedNote.isEmpty()) {
+            return null;
         }
-        return bodyPartName.equalsIgnoreCase(other.bodyPartName);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(bodyPartName.toLowerCase());
-    }
-
-    @Override
-    public String toString() {
-        return note == null
-            ? bodyPartName + " | every " + thresholdDays + " days"
-            : bodyPartName + " | every " + thresholdDays + " days | Note: " + note;
+        return trimmedNote;
     }
 }

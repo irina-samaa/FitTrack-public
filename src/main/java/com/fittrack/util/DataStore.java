@@ -56,7 +56,8 @@ public class DataStore {
 
     public void addBodyPart(BodyPart bodyPart) {
         bodyParts.add(bodyPart);
-        reminderService.addReminder(registeredUser, bodyPart.getName());
+        User reminderOwner = currentUser == null ? registeredUser : currentUser;
+        reminderService.addReminder(reminderOwner, bodyPart.getName());
     }
 
     public ArrayList<WorkoutSession> getSessions() {

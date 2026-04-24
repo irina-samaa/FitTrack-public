@@ -37,10 +37,9 @@ public class ScheduleController {
 
     @FXML
     private void initialize() {
-        labelColumn.setCellValueFactory(
-            cell -> new SimpleStringProperty(cell.getValue().getBodyPartName()));
-        timeColumn.setCellValueFactory(cell -> new SimpleStringProperty(formatReminderStatus(cell.getValue())));
-        noteColumn.setCellValueFactory(cell -> new SimpleStringProperty(formatNote(cell.getValue())));
+        labelColumn.setCellValueFactory(cell -> new SimpleStringProperty(cell.getValue().getBodyPartName()));
+        timeColumn.setCellValueFactory(cell -> new SimpleStringProperty(buildStatusText(cell.getValue())));
+        noteColumn.setCellValueFactory(cell -> new SimpleStringProperty(buildNoteText(cell.getValue())));
         reminderTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
         reminderTable.setItems(reminderList);
         reminderTable.getSelectionModel().selectedItemProperty().addListener((obs, oldValue, newValue) -> {
@@ -96,16 +95,18 @@ public class ScheduleController {
         if (service.getCurrentUser() == null) {
             reminderList.clear();
             nextReminderLabel.setText("Log in to manage reminders");
+            clearForm();
             return;
         }
 
         reminderList.setAll(service.getReminders());
-        int dueReminderCount = service.getDueReminderCount();
-        nextReminderLabel.setText(dueReminderCount + " reminder" + (dueReminderCount == 1 ? "" : "s") + " due");
+        updateNextReminderLabel();
         if (bodyPartComboBox.getValue() == null && !bodyPartComboBox.getItems().isEmpty()) {
             bodyPartComboBox.getSelectionModel().selectFirst();
             loadSelectedReminder();
+            return;
         }
+        loadSelectedReminder();
     }
 
     private void loadBodyPartOptions() {
@@ -126,6 +127,7 @@ public class ScheduleController {
 
     private void loadSelectedReminder() {
         if (service.getCurrentUser() == null) {
+            clearForm();
             return;
         }
 
@@ -161,26 +163,50 @@ public class ScheduleController {
         if (thresholdText.isEmpty()) {
             return null;
         }
-        return Integer.parseInt(thresholdText);
+
+        int thresholdDays = Integer.parseInt(thresholdText);
+        if (thresholdDays <= 0) {
+            throw new NumberFormatException("Threshold days must be positive.");
+        }
+        return thresholdDays;
     }
 
-    private String formatReminderStatus(Reminder reminder) {
+    private void updateNextReminderLabel() {
+        Reminder nextReminder = service.getNextReminder();
+        if (nextReminder == null) {
+            nextReminderLabel.setText("No reminder started yet");
+            return;
+        }
+
+        if (service.isReminderDue(nextReminder)) {
+            nextReminderLabel.setText("Dashboard: " + nextReminder.getBodyPartName() + " is due now");
+            return;
+        }
+
+        int daysRemaining = Math.max(service.getDaysRemaining(nextReminder), 0);
+        nextReminderLabel.setText(
+            "Dashboard: " + nextReminder.getBodyPartName() + " in "
+                + daysRemaining + " day" + (daysRemaining == 1 ? "" : "s")
+        );
+    }
+
+    private String buildStatusText(Reminder reminder) {
         if (!service.hasReminderStarted(reminder)) {
-            return "Starts after the first logged workout for this body part";
+            return "Waiting for first logged workout";
         }
 
         int inactiveDays = service.getInactiveDays(reminder);
         if (service.isReminderDue(reminder)) {
-            return reminder.formatStatusMessage(inactiveDays);
+            return inactiveDays + " inactive day" + (inactiveDays == 1 ? "" : "s") + " | due now";
         }
 
-        int remainingDays = Math.max(reminder.getThresholdDays() - inactiveDays, 0);
+        int remainingDays = Math.max(service.getDaysRemaining(reminder), 0);
         return inactiveDays + " inactive day" + (inactiveDays == 1 ? "" : "s")
-            + " | " + remainingDays + " day" + (remainingDays == 1 ? "" : "s") + " until reminder";
+            + " | " + remainingDays + " day" + (remainingDays == 1 ? "" : "s") + " left";
     }
 
-    private String formatNote(Reminder reminder) {
-        return reminder.getNote() == null ? "No note" : reminder.getNote();
+    private String buildNoteText(Reminder reminder) {
+        return reminder.getNote() == null ? "-" : reminder.getNote();
     }
 
     private void showAlert(String message) {
