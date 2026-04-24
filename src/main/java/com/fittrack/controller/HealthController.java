@@ -45,7 +45,7 @@ public class HealthController {
             currentWeightLabel.setText("Current weight: " + weight + " kg");
             currentHeightLabel.setText("Current height: " + height + " cm");
             calculateAndDisplay();
-        } catch (IllegalArgumentException | NumberFormatException e) {
+        } catch (IllegalArgumentException e) {
             showError("Nhap so hop le cho can nang va chieu cao!");
         }
     }

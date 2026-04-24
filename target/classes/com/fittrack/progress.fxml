@@ -55,32 +55,32 @@
     </LineChart>
 
     <!-- ===== STAT CARDS ===== -->
-    <HBox spacing="12">
+    <FlowPane hgap="12" vgap="12">
 
-        <VBox styleClass="card" spacing="4" alignment="CENTER" HBox.hgrow="ALWAYS">
+        <VBox styleClass="card" spacing="4" alignment="CENTER" minWidth="150" prefWidth="180">
             <Label text="MIN" styleClass="field-label" />
             <Label fx:id="minWeightLabel" styleClass="card-big-number"
                    style="-fx-font-size: 20;" />
         </VBox>
 
-        <VBox styleClass="card" spacing="4" alignment="CENTER" HBox.hgrow="ALWAYS">
+        <VBox styleClass="card" spacing="4" alignment="CENTER" minWidth="150" prefWidth="180">
             <Label text="MAX" styleClass="field-label" />
             <Label fx:id="maxWeightLabel" styleClass="card-big-number"
                    style="-fx-font-size: 20;" />
         </VBox>
 
-        <VBox styleClass="card" spacing="4" alignment="CENTER" HBox.hgrow="ALWAYS">
+        <VBox styleClass="card" spacing="4" alignment="CENTER" minWidth="150" prefWidth="180">
             <Label text="AVG" styleClass="field-label" />
             <Label fx:id="avgWeightLabel" styleClass="card-big-number"
                    style="-fx-font-size: 20;" />
         </VBox>
 
-        <VBox styleClass="card" spacing="4" alignment="CENTER" HBox.hgrow="ALWAYS">
+        <VBox styleClass="card" spacing="4" alignment="CENTER" minWidth="150" prefWidth="180">
             <Label text="ENTRIES" styleClass="field-label" />
             <Label fx:id="totalEntriesLabel" styleClass="card-big-number"
                    style="-fx-font-size: 20;" />
         </VBox>
 
-    </HBox>
+    </FlowPane>
 
 </VBox>

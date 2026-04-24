@@ -8,10 +8,12 @@ public class Reminder implements Comparable<Reminder> {
 
     private final String label;
     private final LocalDateTime scheduledTime;
+    private final Integer repeatIntervalDays;
 
-    public Reminder(String label, LocalDateTime scheduledTime) {
+    public Reminder(String label, LocalDateTime scheduledTime, Integer repeatIntervalDays) {
         this.label = label;
         this.scheduledTime = scheduledTime;
+        this.repeatIntervalDays = repeatIntervalDays;
     }
 
     public String getLabel() {
@@ -22,6 +24,10 @@ public class Reminder implements Comparable<Reminder> {
         return scheduledTime;
     }
 
+    public Integer getRepeatIntervalDays() {
+        return repeatIntervalDays;
+    }
+
     @Override
     public int compareTo(Reminder other) {
         return scheduledTime.compareTo(other.scheduledTime);
@@ -29,6 +35,9 @@ public class Reminder implements Comparable<Reminder> {
 
     @Override
     public String toString() {
+        if (repeatIntervalDays != null) {
+            return label + " @ " + scheduledTime.format(FORMATTER) + " (Repeats every " + repeatIntervalDays + " days)";
+        }
         return label + " @ " + scheduledTime.format(FORMATTER);
     }
 }

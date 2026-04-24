@@ -87,6 +87,10 @@ public class FitnessTrackerService {
             }
         }
         dataStore.addSession(session);
+        
+        // Reset repeating reminders since a workout was completed
+        dataStore.getReminderService().resetRepeatingReminders(requireCurrentUser());
+        
         return session;
     }
 
@@ -129,8 +133,8 @@ public class FitnessTrackerService {
         return progressTracker.getLabels(requireCurrentUser());
     }
 
-    public void scheduleReminder(String label, LocalDateTime time) {
-        dataStore.getReminderService().scheduleReminder(requireCurrentUser(), label, time);
+    public void scheduleReminder(String label, LocalDateTime time, Integer repeatIntervalDays) {
+        dataStore.getReminderService().scheduleReminder(requireCurrentUser(), label, time, repeatIntervalDays);
     }
 
     public Reminder getNextReminder() {
@@ -145,13 +149,7 @@ public class FitnessTrackerService {
         return dataStore.getReminderService().getAllReminders(requireCurrentUser());
     }
 
-    public void setRecoveryDays(int days) {
-        dataStore.getReminderService().setRecoveryDays(days);
-    }
 
-    public int getRecoveryDays() {
-        return dataStore.getReminderService().getRecoveryDays();
-    }
 
     public List<SetRecord> getSets(String bodyPartName, String exerciseName) {
         return requireExercise(bodyPartName, exerciseName).getSets();

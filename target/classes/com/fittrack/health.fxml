@@ -17,19 +17,19 @@
     <!--
       GỌI BACKEND: HealthMetrics.getWeight() + getHeight()
     -->
-    <HBox spacing="24">
+    <FlowPane hgap="24" vgap="12">
         <Label fx:id="currentWeightLabel" styleClass="subtitle-text" />
         <Label fx:id="currentHeightLabel" styleClass="subtitle-text" />
-    </HBox>
+    </FlowPane>
 
     <!-- ===== FORM INPUT ===== -->
     <VBox styleClass="card" spacing="14">
         <Label text="UPDATE MEASUREMENTS" styleClass="card-title-accent" />
 
-        <HBox spacing="16">
+        <FlowPane hgap="16" vgap="12">
 
             <!-- Weight Input -->
-            <VBox spacing="6" HBox.hgrow="ALWAYS">
+            <VBox spacing="6" minWidth="220" prefWidth="280">
                 <Label text="WEIGHT (kg)" styleClass="field-label" />
                 <TextField fx:id="weightField"
                            promptText="e.g. 70.5"
@@ -37,7 +37,7 @@
             </VBox>
 
             <!-- Height Input -->
-            <VBox spacing="6" HBox.hgrow="ALWAYS">
+            <VBox spacing="6" minWidth="220" prefWidth="280">
                 <Label text="HEIGHT (cm)" styleClass="field-label" />
                 <TextField fx:id="heightField"
                            promptText="e.g. 175"
@@ -52,15 +52,15 @@
                     styleClass="primary-button"
                     onAction="#handleUpdate"
                     style="-fx-padding: 8 24;" />
-        </HBox>
+        </FlowPane>
     </VBox>
 
     <!-- ===== KẾT QUẢ BMI ===== -->
-    <HBox spacing="20">
+    <FlowPane hgap="20" vgap="20">
 
         <!-- BMI Number Card (to, đậm) -->
         <VBox styleClass="card" spacing="8" alignment="CENTER"
-              HBox.hgrow="ALWAYS" style="-fx-min-width: 180;">
+              minWidth="180" prefWidth="220">
             <Label text="BMI" styleClass="card-title-accent" />
             <!--
               GỌI BACKEND: HealthMetrics.calculateBMI()
@@ -77,7 +77,7 @@
         </VBox>
 
         <!-- Recommendation Card -->
-        <VBox styleClass="card" spacing="8" HBox.hgrow="ALWAYS">
+        <VBox styleClass="card" spacing="8" minWidth="320" prefWidth="520">
             <Label text="RECOMMENDATION" styleClass="card-title-accent" />
             <!--
               GỌI BACKEND: HealthMetrics.getHealthRecommendation()
@@ -96,6 +96,6 @@
             <Label text="≥ 30 → Obese" style="-fx-text-fill: #FF4500; -fx-font-size: 12;" />
         </VBox>
 
-    </HBox>
+    </FlowPane>
 
 </VBox>

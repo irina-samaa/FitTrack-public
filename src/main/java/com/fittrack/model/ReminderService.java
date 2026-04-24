@@ -8,15 +8,9 @@ import java.util.PriorityQueue;
 
 public class ReminderService {
     private final Map<String, PriorityQueue<Reminder>> remindersByUser = new HashMap<>();
-    private int recoveryDays = 5;
 
-    public void scheduleReminder(User user, String label, LocalDateTime time) {
-        remindersFor(user).add(new Reminder(label, time));
-    }
-
-    public void scheduleReminder(User user) {
-        LocalDateTime nextTime = LocalDateTime.now().plusDays(recoveryDays);
-        scheduleReminder(user, "Recovery Reminder", nextTime);
+    public void scheduleReminder(User user, String label, LocalDateTime time, Integer repeatIntervalDays) {
+        remindersFor(user).add(new Reminder(label, time, repeatIntervalDays));
     }
 
     public Reminder getNextReminder(User user) {
@@ -36,16 +30,25 @@ public class ReminderService {
         return result;
     }
 
-    public void setRecoveryDays(int days) {
-        if (days < 0) {
-            throw new IllegalArgumentException("Recovery days cannot be negative.");
+    public void resetRepeatingReminders(User user) {
+        PriorityQueue<Reminder> currentReminders = remindersFor(user);
+        ArrayList<Reminder> toReAdd = new ArrayList<>();
+        ArrayList<Reminder> toKeep = new ArrayList<>();
+
+        while (!currentReminders.isEmpty()) {
+            Reminder r = currentReminders.poll();
+            if (r.getRepeatIntervalDays() != null) {
+                // It's a repeating reminder, update its time
+                toReAdd.add(new Reminder(r.getLabel(), LocalDateTime.now().plusDays(r.getRepeatIntervalDays()), r.getRepeatIntervalDays()));
+            } else {
+                toKeep.add(r);
+            }
         }
-        recoveryDays = days;
+
+        currentReminders.addAll(toKeep);
+        currentReminders.addAll(toReAdd);
     }
 
-    public int getRecoveryDays() {
-        return recoveryDays;
-    }
 
     private PriorityQueue<Reminder> remindersFor(User user) {
         return remindersByUser.computeIfAbsent(user.getUsername(), ignored -> new PriorityQueue<>());

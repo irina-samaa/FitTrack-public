@@ -107,7 +107,7 @@ public class DataStore {
     }
 
     private void seedReminders() {
-        reminderService.scheduleReminder(registeredUser, "Chest Day", LocalDateTime.now().plusDays(1));
-        reminderService.scheduleReminder(registeredUser, "Leg Day", LocalDateTime.now().plusDays(3));
+        reminderService.scheduleReminder(registeredUser, "Chest Day", LocalDateTime.now().plusDays(1), null);
+        reminderService.scheduleReminder(registeredUser, "Leg Day", LocalDateTime.now().plusDays(3), null);
     }
 }

@@ -54,6 +54,7 @@ public class MainController {
             mainPane.setCenter(view);
         } catch (Exception e) {
             System.out.println("Loi khi load view " + viewName + ": " + e.getMessage());
+            e.printStackTrace();
         }
     }
 

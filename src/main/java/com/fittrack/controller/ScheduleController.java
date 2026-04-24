@@ -7,6 +7,7 @@ import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
+import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
@@ -19,52 +20,101 @@ import java.time.format.DateTimeParseException;
 public class ScheduleController {
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 
-    @FXML private TableView<Reminder> reminderTable;
-    @FXML private TableColumn<Reminder, String> labelColumn;
-    @FXML private TableColumn<Reminder, String> timeColumn;
-    @FXML private TextField reminderLabelField;
-    @FXML private TextField reminderTimeField;
-    @FXML private TextField recoveryDaysField;
-    @FXML private Label recoveryDaysInfo;
-    @FXML private Label nextReminderLabel;
+    @FXML
+    private TableView<Reminder> reminderTable;
+    @FXML
+    private TableColumn<Reminder, String> labelColumn;
+    @FXML
+    private TableColumn<Reminder, String> timeColumn;
+    @FXML
+    private TextField reminderLabelField;
+    @FXML
+    private TextField reminderTimeField;
+    @FXML
+    private ComboBox<String> reminderTypeComboBox;
+    @FXML
+    private Label reminderInputLabel;
+    @FXML
+    private Label nextReminderLabel;
 
     private final FitnessTrackerService service = FitnessTrackerService.getInstance();
     private final ObservableList<Reminder> reminderList = FXCollections.observableArrayList();
 
     @FXML
     private void initialize() {
-        labelColumn.setCellValueFactory(cell -> new javafx.beans.property.SimpleStringProperty(cell.getValue().getLabel()));
-        timeColumn.setCellValueFactory(cell -> new javafx.beans.property.SimpleStringProperty(cell.getValue().getScheduledTime().format(FORMATTER)));
+        labelColumn.setCellValueFactory(
+                cell -> new javafx.beans.property.SimpleStringProperty(cell.getValue().getLabel()));
+        timeColumn.setCellValueFactory(cell -> new javafx.beans.property.SimpleStringProperty(
+                cell.getValue().getScheduledTime().format(FORMATTER)));
         reminderTable.setItems(reminderList);
 
-        int days = service.getRecoveryDays();
-        recoveryDaysField.setText(String.valueOf(days));
-        recoveryDaysInfo.setText("Rest " + days + " days between sessions");
+        reminderTypeComboBox.getItems().addAll("Specific Date & Time", "Repeat (Inactivity)");
+        reminderTypeComboBox.setValue("Specific Date & Time");
+        reminderTypeComboBox.setOnAction(e -> updateReminderInputMode());
+
         refreshReminderList();
+    }
+
+    private void updateReminderInputMode() {
+        if ("Repeat (Inactivity)".equals(reminderTypeComboBox.getValue())) {
+            reminderInputLabel.setText("REPEAT EVERY (DAYS)");
+            reminderTimeField.setPromptText("e.g. 3");
+            reminderTimeField.clear();
+        } else {
+            reminderInputLabel.setText("DATE & TIME");
+            reminderTimeField.setPromptText("yyyy-MM-dd HH:mm");
+            reminderTimeField.clear();
+        }
     }
 
     @FXML
     private void addReminder() {
-        String label = reminderLabelField.getText().trim();
-        String timeText = reminderTimeField.getText().trim();
-        if (label.isEmpty() || timeText.isEmpty()) {
-            showAlert("Vui long nhap day du label va thoi gian!");
+        if (service.getCurrentUser() == null) {
+            showAlert("Please log in before adding reminders.");
             return;
         }
 
-        try {
-            LocalDateTime time = LocalDateTime.parse(timeText, FORMATTER);
-            service.scheduleReminder(label, time);
-            reminderLabelField.clear();
-            reminderTimeField.clear();
-            refreshReminderList();
-        } catch (DateTimeParseException e) {
-            showAlert("Sai dinh dang thoi gian. Dung yyyy-MM-dd HH:mm");
+        String label = reminderLabelField.getText().trim();
+        String inputText = reminderTimeField.getText().trim();
+        if (label.isEmpty() || inputText.isEmpty()) {
+            showAlert("Vui long nhap day du label va thoi gian/so ngay!");
+            return;
         }
+
+        if ("Repeat (Inactivity)".equals(reminderTypeComboBox.getValue())) {
+            try {
+                int days = Integer.parseInt(inputText);
+                if (days <= 0) {
+                    showAlert("So ngay phai lon hon 0!");
+                    return;
+                }
+                service.scheduleReminder(label, LocalDateTime.now().plusDays(days), days);
+            } catch (NumberFormatException e) {
+                showAlert("So ngay phai la so nguyen!");
+                return;
+            }
+        } else {
+            try {
+                LocalDateTime time = LocalDateTime.parse(inputText, FORMATTER);
+                service.scheduleReminder(label, time, null);
+            } catch (DateTimeParseException e) {
+                showAlert("Sai dinh dang thoi gian. Dung yyyy-MM-dd HH:mm");
+                return;
+            }
+        }
+
+        reminderLabelField.clear();
+        reminderTimeField.clear();
+        refreshReminderList();
     }
 
     @FXML
     private void removeNextReminder() {
+        if (service.getCurrentUser() == null) {
+            showAlert("Please log in before removing reminders.");
+            return;
+        }
+
         Reminder next = service.getNextReminder();
         if (next == null) {
             showAlert("Khong co reminder nao!");
@@ -82,18 +132,13 @@ public class ScheduleController {
         });
     }
 
-    @FXML
-    private void saveRecoveryDays() {
-        try {
-            int days = Integer.parseInt(recoveryDaysField.getText().trim());
-            service.setRecoveryDays(days);
-            recoveryDaysInfo.setText("Rest " + days + " days between sessions");
-        } catch (IllegalArgumentException | NumberFormatException e) {
-            showAlert("Recovery days phai la so nguyen khong am!");
-        }
-    }
-
     private void refreshReminderList() {
+        if (service.getCurrentUser() == null) {
+            reminderList.clear();
+            nextReminderLabel.setText("Log in to manage reminders");
+            return;
+        }
+
         reminderList.setAll(service.getAllReminders());
         Reminder next = service.getNextReminder();
         if (next == null) {
