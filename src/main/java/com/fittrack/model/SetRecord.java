@@ -11,13 +11,13 @@ public abstract class SetRecord {
         return type;
     }
 
-    public abstract String getPrimaryMetricLabel();
+    public abstract String getFirstMetric();
 
-    public abstract String getSecondaryMetricLabel();
+    public abstract String getSecondMetric();
 
-    public abstract Number getPrimaryMetricValue();
+    public abstract Number getFirstMetricValue();
 
-    public abstract Number getSecondaryMetricValue();
+    public abstract Number getSecondMetricValue();
 
     public abstract double getWorkloadScore();
 

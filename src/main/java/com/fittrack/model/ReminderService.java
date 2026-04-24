@@ -1,96 +1,100 @@
 package com.fittrack.model;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.PriorityQueue;
 
 public class ReminderService {
-    private static final int DEFAULT_BODY_PART_INACTIVITY_DAYS = 5;
+    private final Map<String, Map<String, Reminder>> remindersByUser = new HashMap<>();
 
-    private final Map<String, PriorityQueue<Reminder>> remindersByUser = new HashMap<>();
-    private final Map<String, Map<String, LocalDate>> bodyPartTrackingStartsByUser = new HashMap<>();
-
-    public void scheduleReminder(User user, String label, LocalDateTime time, String note) {
-        remindersFor(user).add(new Reminder(label, time, note));
-    }
-
-    public boolean removeReminder(User user, Reminder reminder) {
-        if (reminder == null) {
-            return false;
-        }
-        return remindersFor(user).remove(reminder);
-    }
-
-    private ArrayList<Reminder> getAllReminders(User user) {
-        PriorityQueue<Reminder> copy = new PriorityQueue<>(remindersFor(user));
-        ArrayList<Reminder> result = new ArrayList<>();
-        while (!copy.isEmpty()) {
-            result.add(copy.poll());
-        }
-        return result;
-    }
-
-    public ArrayList<ReminderDisplayItem> getDisplayItems(User user) {
-        ArrayList<ReminderDisplayItem> items = new ArrayList<>();
-        items.addAll(getBodyPartAlerts(user));
-        items.addAll(getAllReminders(user));
-        items.sort(displayComparator());
-        return items;
-    }
-
-    public ReminderDisplayItem getNextDisplayItem(User user) {
-        ArrayList<ReminderDisplayItem> items = getDisplayItems(user);
-        return items.isEmpty() ? null : items.get(0);
-    }
-
-    public void ensureBodyPartTracking(User user, String bodyPartName) {
-        if (bodyPartName == null || bodyPartName.isBlank()) {
+    public void addReminder(User user, String bodyPartName) {
+        if (user == null || bodyPartName == null || bodyPartName.isBlank()) {
             return;
         }
-        trackingStartsFor(user).computeIfAbsent(
-            normalizeBodyPartKey(bodyPartName),
-            ignored -> LocalDate.now()
-        );
+
+        Map<String, Reminder> reminders = remindersFor(user);
+        String bodyPartKey = normalizeKey(bodyPartName);
+        reminders.computeIfAbsent(bodyPartKey, ignored ->
+            new Reminder(bodyPartName, Reminder.DEFAULT_THRESHOLD_DAYS, null));
     }
 
-    public void seedBodyPartTracking(User user, String bodyPartName, LocalDate trackingStartDate) {
-        trackingStartsFor(user).put(normalizeBodyPartKey(bodyPartName), trackingStartDate);
+    public void createOrUpdateReminder(User user, String bodyPartName, Integer thresholdDays, String note) {
+        if (user == null) {
+            throw new IllegalArgumentException("User is required.");
+        }
+
+        String bodyPartKey = normalizeKey(bodyPartName);
+        Map<String, Reminder> reminders = remindersFor(user);
+        Reminder existingReminder = reminders.get(bodyPartKey);
+        if (existingReminder == null) {
+            reminders.put(bodyPartKey, new Reminder(bodyPartName, thresholdDays, note));
+            return;
+        }
+
+        existingReminder.update(thresholdDays, note);
     }
 
-    private PriorityQueue<Reminder> remindersFor(User user) {
-        return remindersByUser.computeIfAbsent(user.getUsername(), ignored -> new PriorityQueue<>());
+    public Reminder getReminder(User user, String bodyPartName) {
+        if (user == null || bodyPartName == null || bodyPartName.isBlank()) {
+            return null;
+        }
+        return remindersFor(user).get(normalizeKey(bodyPartName));
     }
 
-    private Map<String, LocalDate> trackingStartsFor(User user) {
-        return bodyPartTrackingStartsByUser.computeIfAbsent(user.getUsername(), ignored -> new HashMap<>());
+    public ArrayList<Reminder> getReminders(User user) {
+        ArrayList<Reminder> reminders = new ArrayList<>(remindersFor(user).values());
+        reminders.sort(reminderComparator(user));
+        return reminders;
     }
 
-    private List<BodyPartInactivityAlert> getBodyPartAlerts(User user) {
-        ArrayList<BodyPartInactivityAlert> alerts = new ArrayList<>();
-        for (Map.Entry<String, LocalDate> entry : trackingStartsFor(user).entrySet()) {
-            long inactiveDays = calculateInactiveDays(user, entry.getKey(), entry.getValue());
-            if (inactiveDays >= DEFAULT_BODY_PART_INACTIVITY_DAYS) {
-                alerts.add(new BodyPartInactivityAlert(
-                    formatBodyPartName(entry.getKey()),
-                    inactiveDays,
-                    DEFAULT_BODY_PART_INACTIVITY_DAYS
-                ));
+    public Reminder getTopDueReminder(User user) {
+        for (Reminder reminder : getReminders(user)) {
+            if (isDue(user, reminder)) {
+                return reminder;
             }
         }
-        return alerts;
+        return null;
     }
 
-    private long calculateInactiveDays(User user, String bodyPartKey, LocalDate trackingStartDate) {
-        LocalDate lastWorkedDate = findLastWorkedDate(user, bodyPartKey);
-        LocalDate referenceDate = lastWorkedDate == null ? trackingStartDate : lastWorkedDate;
-        long inactiveDays = ChronoUnit.DAYS.between(referenceDate, LocalDate.now());
-        return Math.max(inactiveDays, 0);
+    public int getInactiveDays(User user, Reminder reminder) {
+        LocalDate lastWorkedDate = findLastWorkedDate(user, normalizeKey(reminder.getBodyPartName()));
+        if (lastWorkedDate == null) {
+            return 0;
+        }
+        long inactiveDays = ChronoUnit.DAYS.between(lastWorkedDate, LocalDate.now());
+        return (int) Math.max(inactiveDays, 0);
+    }
+
+    public boolean isDue(User user, Reminder reminder) {
+        return hasStarted(user, reminder) && getInactiveDays(user, reminder) >= reminder.getThresholdDays();
+    }
+
+    public boolean hasStarted(User user, Reminder reminder) {
+        return findFirstWorkedDate(user, normalizeKey(reminder.getBodyPartName())) != null;
+    }
+
+    public int getDueCount(User user) {
+        int dueCount = 0;
+        for (Reminder reminder : remindersFor(user).values()) {
+            if (isDue(user, reminder)) {
+                dueCount++;
+            }
+        }
+        return dueCount;
+    }
+
+    private Comparator<Reminder> reminderComparator(User user) {
+        return Comparator
+            .comparing((Reminder reminder) -> !isDue(user, reminder))
+            .thenComparing((Reminder reminder) -> !hasStarted(user, reminder))
+            .thenComparing((left, right) -> Integer.compare(
+                getInactiveDays(user, right),
+                getInactiveDays(user, left)
+            ))
+            .thenComparing(Reminder::getBodyPartName, String.CASE_INSENSITIVE_ORDER);
     }
 
     private LocalDate findLastWorkedDate(User user, String bodyPartKey) {
@@ -98,7 +102,7 @@ public class ReminderService {
         for (WorkoutSession session : user.getWorkoutHistory()) {
             boolean matchesBodyPart = false;
             for (Exercise exercise : session.getExercises()) {
-                if (normalizeBodyPartKey(exercise.getBodyPart().getName()).equals(bodyPartKey)) {
+                if (normalizeKey(exercise.getBodyPart().getName()).equals(bodyPartKey)) {
                     matchesBodyPart = true;
                     break;
                 }
@@ -115,31 +119,36 @@ public class ReminderService {
         return latest;
     }
 
-    private Comparator<ReminderDisplayItem> displayComparator() {
-        return Comparator
-            .comparingInt(this::displayPriority)
-            .thenComparing((left, right) -> {
-                if (left instanceof BodyPartInactivityAlert leftAlert && right instanceof BodyPartInactivityAlert rightAlert) {
-                    return Long.compare(rightAlert.inactiveDays(), leftAlert.inactiveDays());
+    private LocalDate findFirstWorkedDate(User user, String bodyPartKey) {
+        LocalDate earliest = null;
+        for (WorkoutSession session : user.getWorkoutHistory()) {
+            boolean matchesBodyPart = false;
+            for (Exercise exercise : session.getExercises()) {
+                if (normalizeKey(exercise.getBodyPart().getName()).equals(bodyPartKey)) {
+                    matchesBodyPart = true;
+                    break;
                 }
-                if (left instanceof Reminder leftReminder && right instanceof Reminder rightReminder) {
-                    return leftReminder.getScheduledTime().compareTo(rightReminder.getScheduledTime());
-                }
-                return left.getTitle().compareToIgnoreCase(right.getTitle());
-            });
+            }
+            if (!matchesBodyPart) {
+                continue;
+            }
+
+            LocalDate sessionDate = LocalDate.parse(session.getDate());
+            if (earliest == null || sessionDate.isBefore(earliest)) {
+                earliest = sessionDate;
+            }
+        }
+        return earliest;
     }
 
-    private int displayPriority(ReminderDisplayItem item) {
-        return item instanceof BodyPartInactivityAlert ? 0 : 1;
+    private Map<String, Reminder> remindersFor(User user) {
+        return remindersByUser.computeIfAbsent(user.getUsername(), ignored -> new HashMap<>());
     }
 
-    private String normalizeBodyPartKey(String bodyPartName) {
+    private String normalizeKey(String bodyPartName) {
+        if (bodyPartName == null || bodyPartName.isBlank()) {
+            throw new IllegalArgumentException("Body part name cannot be blank.");
+        }
         return bodyPartName.trim().toLowerCase();
-    }
-
-    private String formatBodyPartName(String bodyPartKey) {
-        return bodyPartKey.isEmpty()
-            ? bodyPartKey
-            : Character.toUpperCase(bodyPartKey.charAt(0)) + bodyPartKey.substring(1);
     }
 }

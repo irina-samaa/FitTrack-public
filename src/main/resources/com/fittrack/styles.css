@@ -545,6 +545,15 @@
     -fx-background-color: #FF8A5B;
 }
 
+.reminder-form-grid {
+    -fx-alignment: top-left;
+}
+
+.reminder-form-grid .text-field,
+.reminder-form-grid .combo-box {
+    -fx-pref-height: 38px;
+}
+
 .combo-box-popup .list-view {
     -fx-background-color: #111111;
     -fx-border-color: #FF4500;

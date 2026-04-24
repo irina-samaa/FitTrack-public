@@ -1,57 +1,55 @@
 package com.fittrack.model;
 
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
+public class Reminder {
+    public static final int DEFAULT_THRESHOLD_DAYS = 5;
 
-public class Reminder implements Comparable<Reminder>, ReminderDisplayItem {
-    private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+    private final String bodyPartName;
+    private int thresholdDays;
+    private String note;
 
-    private final String label;
-    private final LocalDateTime scheduledTime;
-    private final String note;
+    public Reminder(String bodyPartName, Integer thresholdDays, String note) {
+        if (bodyPartName == null || bodyPartName.isBlank()) {
+            throw new IllegalArgumentException("Body part name cannot be blank.");
+        }
 
-    public Reminder(String label, LocalDateTime scheduledTime, String note) {
-        this.label = label;
-        this.scheduledTime = scheduledTime;
+        this.bodyPartName = bodyPartName.trim();
+        update(thresholdDays, note);
+    }
+
+    public void update(Integer thresholdDays, String note) {
+        int resolvedThreshold = thresholdDays == null ? DEFAULT_THRESHOLD_DAYS : thresholdDays;
+        if (resolvedThreshold <= 0) {
+            throw new IllegalArgumentException("Threshold days must be greater than 0.");
+        }
+
+        this.thresholdDays = resolvedThreshold;
         this.note = (note == null || note.isBlank()) ? null : note.trim();
     }
 
-    public String getLabel() {
-        return label;
+    public String getBodyPartName() {
+        return bodyPartName;
     }
 
-    @Override
-    public String getTitle() {
-        return label;
-    }
-
-    public LocalDateTime getScheduledTime() {
-        return scheduledTime;
+    public int getThresholdDays() {
+        return thresholdDays;
     }
 
     public String getNote() {
         return note;
     }
 
-    @Override
-    public String getMessage() {
-        StringBuilder builder = new StringBuilder("Scheduled: ")
-            .append(scheduledTime.format(FORMATTER));
+    public String getTitle() {
+        return bodyPartName + " Reminder";
+    }
+
+    public String formatStatusMessage(int inactiveDays) {
+        String text = inactiveDays + " inactive day" + (inactiveDays == 1 ? "" : "s")
+            + " | Threshold: " + thresholdDays + " day" + (thresholdDays == 1 ? "" : "s");
+
         if (note != null) {
-            builder.append(" | Note: ").append(note);
+            text += " | Note: " + note;
         }
-        return builder.toString();
-    }
 
-    @Override
-    public int compareTo(Reminder other) {
-        return scheduledTime.compareTo(other.scheduledTime);
-    }
-
-    @Override
-    public String toString() {
-        return note == null
-            ? label + " @ " + scheduledTime.format(FORMATTER)
-            : label + " @ " + scheduledTime.format(FORMATTER) + " | Note: " + note;
+        return text;
     }
 }

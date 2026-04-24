@@ -19,22 +19,22 @@ public class CardioSetRecord extends SetRecord {
     }
 
     @Override
-    public String getPrimaryMetricLabel() {
+    public String getFirstMetric() {
         return "Duration (min)";
     }
 
     @Override
-    public String getSecondaryMetricLabel() {
+    public String getSecondMetric() {
         return "Distance (km)";
     }
 
     @Override
-    public Number getPrimaryMetricValue() {
+    public Number getFirstMetricValue() {
         return durationMinutes;
     }
 
     @Override
-    public Number getSecondaryMetricValue() {
+    public Number getSecondMetricValue() {
         return distanceKm;
     }
 

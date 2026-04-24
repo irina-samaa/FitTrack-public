@@ -6,14 +6,11 @@ import com.fittrack.model.ExerciseType;
 import com.fittrack.model.HealthMetrics;
 import com.fittrack.model.ProgressTracker;
 import com.fittrack.model.Reminder;
-import com.fittrack.model.ReminderDisplayItem;
 import com.fittrack.model.SetRecord;
 import com.fittrack.model.User;
 import com.fittrack.model.WorkoutSession;
 import com.fittrack.util.DataStore;
 
-import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -87,9 +84,9 @@ public class FitnessTrackerService {
     public WorkoutSession startWorkoutSession(String sessionName) {
         requireCurrentUser();
         String resolvedSessionName = (sessionName == null || sessionName.isBlank())
-            ? "Workout - " + LocalDate.now()
-            : sessionName.trim();
-        WorkoutSession session = new WorkoutSession(LocalDate.now(), resolvedSessionName);
+                ? "Workout - " + java.time.LocalDate.now()
+                : sessionName.trim();
+        WorkoutSession session = new WorkoutSession(java.time.LocalDate.now(), resolvedSessionName);
         List<Exercise> exercisesToClear = new ArrayList<>();
         for (BodyPart bodyPart : dataStore.getBodyParts()) {
             for (Exercise exercise : bodyPart.getExercises()) {
@@ -149,30 +146,37 @@ public class FitnessTrackerService {
         return progressTracker.getLabels(requireCurrentUser());
     }
 
-    public void scheduleReminder(String label, LocalDateTime time) {
-        scheduleReminder(label, time, null);
+    public ArrayList<Reminder> getReminders() {
+        return dataStore.getReminderService().getReminders(requireCurrentUser());
     }
 
-    public void scheduleReminder(String label, LocalDateTime time, String note) {
-        dataStore.getReminderService().scheduleReminder(requireCurrentUser(), label, time, note);
+    public Reminder getReminder(String bodyPartName) {
+        return dataStore.getReminderService().getReminder(requireCurrentUser(), bodyPartName);
     }
 
-    public ArrayList<ReminderDisplayItem> getReminderDisplayItems() {
-        return dataStore.getReminderService().getDisplayItems(requireCurrentUser());
+    public Reminder getTopDueReminder() {
+        return dataStore.getReminderService().getTopDueReminder(requireCurrentUser());
     }
 
-    public ReminderDisplayItem getNextReminderDisplayItem() {
-        return dataStore.getReminderService().getNextDisplayItem(requireCurrentUser());
+    public void createOrUpdateReminder(String bodyPartName, Integer thresholdDays, String note) {
+        dataStore.getReminderService().createOrUpdateReminder(requireCurrentUser(), bodyPartName, thresholdDays, note);
     }
 
-    public boolean removeReminderDisplayItem(ReminderDisplayItem item) {
-        if (item instanceof Reminder reminder) {
-            return dataStore.getReminderService().removeReminder(requireCurrentUser(), reminder);
-        }
-        return false;
+    public int getInactiveDays(Reminder reminder) {
+        return dataStore.getReminderService().getInactiveDays(requireCurrentUser(), reminder);
     }
 
+    public boolean isReminderDue(Reminder reminder) {
+        return dataStore.getReminderService().isDue(requireCurrentUser(), reminder);
+    }
 
+    public boolean hasReminderStarted(Reminder reminder) {
+        return dataStore.getReminderService().hasStarted(requireCurrentUser(), reminder);
+    }
+
+    public int getDueReminderCount() {
+        return dataStore.getReminderService().getDueCount(requireCurrentUser());
+    }
 
     public List<SetRecord> getSets(String bodyPartName, String exerciseName) {
         return requireExercise(bodyPartName, exerciseName).getSets();

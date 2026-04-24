@@ -7,7 +7,6 @@ import com.fittrack.model.User;
 import com.fittrack.model.WorkoutSession;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -25,8 +24,7 @@ public class DataStore {
         registeredUser.seedWeightHistory(List.of(68.0, 69.0, 70.0, 70.5, 71.0, 70.0, 69.5));
         seedBodyParts();
         seedSessions();
-        seedBodyPartReminderDemo();
-        seedReminders();
+        seedReminderDemo();
     }
 
     public static DataStore getInstance() {
@@ -58,7 +56,7 @@ public class DataStore {
 
     public void addBodyPart(BodyPart bodyPart) {
         bodyParts.add(bodyPart);
-        reminderService.ensureBodyPartTracking(registeredUser, bodyPart.getName());
+        reminderService.addReminder(registeredUser, bodyPart.getName());
     }
 
     public ArrayList<WorkoutSession> getSessions() {
@@ -117,15 +115,10 @@ public class DataStore {
         registeredUser.addWorkoutSession(legsSession);
     }
 
-    private void seedBodyPartReminderDemo() {
-        reminderService.seedBodyPartTracking(registeredUser, "Chest", LocalDate.now().minusDays(5));
-        reminderService.seedBodyPartTracking(registeredUser, "Legs", LocalDate.now().minusDays(8));
-        reminderService.seedBodyPartTracking(registeredUser, "Back", LocalDate.now().minusDays(7));
-    }
-
-    private void seedReminders() {
-        reminderService.scheduleReminder(registeredUser, "Hydration Check", LocalDateTime.now().plusHours(12), "Aim for 2.5L today");
-        reminderService.scheduleReminder(registeredUser, "Sunday Stretch", LocalDateTime.now().plusDays(2), "10-minute mobility session");
+    private void seedReminderDemo() {
+        reminderService.createOrUpdateReminder(registeredUser, "Chest", 5, "Light pressing day if your shoulders feel fresh.");
+        reminderService.createOrUpdateReminder(registeredUser, "Legs", 5, "Do not skip leg day twice.");
+        reminderService.createOrUpdateReminder(registeredUser, "Back", 5, "Rows or pull-downs are enough for a reset session.");
     }
 
     private BodyPart findBodyPart(String name) {

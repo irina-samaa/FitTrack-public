@@ -1,9 +1,9 @@
 package com.fittrack.controller;
 
-import com.fittrack.model.WorkoutSession;
 import com.fittrack.model.Exercise;
-import com.fittrack.model.ReminderDisplayItem;
+import com.fittrack.model.Reminder;
 import com.fittrack.model.SetRecord;
+import com.fittrack.model.WorkoutSession;
 import com.fittrack.service.FitnessTrackerService;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
@@ -127,22 +127,23 @@ public class DashboardController {
         if (service.getCurrentUser() == null) {
             reminderTitleLabel.setText("No reminder loaded");
             reminderTimeLabel.setText("Log in to see reminders");
-            upcomingCountLabel.setText("No reminder queue yet");
+            upcomingCountLabel.setText("0 reminders due");
             return;
         }
 
-        ReminderDisplayItem next = service.getNextReminderDisplayItem();
-        int reminderCount = service.getReminderDisplayItems().size();
-        upcomingCountLabel.setText(reminderCount + " upcoming reminder" + (reminderCount == 1 ? "" : "s"));
+        int dueReminderCount = service.getDueReminderCount();
+        upcomingCountLabel.setText(dueReminderCount + " reminder" + (dueReminderCount == 1 ? "" : "s") + " due");
 
-        if (next == null) {
-            reminderTitleLabel.setText("No upcoming reminders");
-            reminderTimeLabel.setText("You're all caught up.");
+        Reminder topReminder = service.getTopDueReminder();
+        if (topReminder == null) {
+            reminderTitleLabel.setText("No reminders due");
+            reminderTimeLabel.setText("Threshold countdown starts after the first logged workout for each body part.");
             return;
         }
 
-        reminderTitleLabel.setText(next.getTitle());
-        reminderTimeLabel.setText(next.getMessage());
+        int inactiveDays = service.getInactiveDays(topReminder);
+        reminderTitleLabel.setText(topReminder.getTitle());
+        reminderTimeLabel.setText(topReminder.formatStatusMessage(inactiveDays));
     }
 
     private void loadMotivationQuote() {

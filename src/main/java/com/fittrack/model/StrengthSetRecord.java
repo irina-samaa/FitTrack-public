@@ -19,22 +19,22 @@ public class StrengthSetRecord extends SetRecord {
     }
 
     @Override
-    public String getPrimaryMetricLabel() {
+    public String getFirstMetric() {
         return "Reps";
     }
 
     @Override
-    public String getSecondaryMetricLabel() {
+    public String getSecondMetric() {
         return "Weight (kg)";
     }
 
     @Override
-    public Number getPrimaryMetricValue() {
+    public Number getFirstMetricValue() {
         return reps;
     }
 
     @Override
-    public Number getSecondaryMetricValue() {
+    public Number getSecondMetricValue() {
         return weight;
     }
 

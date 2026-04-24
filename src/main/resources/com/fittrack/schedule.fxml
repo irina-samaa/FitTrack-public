@@ -14,63 +14,67 @@
            style="-fx-text-fill: #00E5FF; -fx-font-size: 14;" />
 
     <VBox styleClass="card" spacing="8" VBox.vgrow="ALWAYS">
-        <Label text="PRIORITY REMINDERS" styleClass="card-title-accent" />
+        <Label text="BODY PART REMINDERS" styleClass="card-title-accent" />
 
         <TableView fx:id="reminderTable"
                    styleClass="dark-table"
                    VBox.vgrow="ALWAYS">
             <columns>
-                <TableColumn fx:id="labelColumn" text="Title" minWidth="200" />
-                <TableColumn fx:id="timeColumn" text="Message" minWidth="280" />
-                <TableColumn fx:id="noteColumn" text="Type" minWidth="180" />
+                <TableColumn fx:id="labelColumn" text="Body Part" minWidth="180" />
+                <TableColumn fx:id="timeColumn" text="Status" minWidth="360" />
+                <TableColumn fx:id="noteColumn" text="Note" minWidth="220" />
             </columns>
             <placeholder>
-                <Label text="No active reminders yet."
+                <Label text="No reminders configured yet."
                        style="-fx-text-fill: #666;" />
             </placeholder>
         </TableView>
-
-        <HBox alignment="CENTER_RIGHT">
-            <Button text="Remove Selected"
-                    styleClass="danger-button"
-                    onAction="#removeSelectedReminder" />
-        </HBox>
     </VBox>
 
     <VBox styleClass="card" spacing="10">
-        <Label text="ADD MANUAL REMINDER" styleClass="card-title-accent" />
+        <Label text="UPDATE REMINDER" styleClass="card-title-accent" />
 
-        <Label text="Body part inactivity reminders are automatic after 5 days without a logged session for that body part."
+        <Label text="Each body part has one reminder config. Countdown starts automatically after the first logged workout for that body part."
                styleClass="card-subtitle"
                wrapText="true" />
 
-        <FlowPane hgap="12" vgap="12" prefWrapLength="1020">
-            <VBox spacing="4" minWidth="220" prefWidth="260">
-                <Label text="LABEL" styleClass="field-label" />
-                <TextField fx:id="reminderLabelField"
-                           promptText="e.g. Chest Day, Leg Day..."
+        <GridPane hgap="16" vgap="14" styleClass="reminder-form-grid">
+            <columnConstraints>
+                <ColumnConstraints percentWidth="50" hgrow="ALWAYS" />
+                <ColumnConstraints percentWidth="50" hgrow="ALWAYS" />
+            </columnConstraints>
+
+            <VBox spacing="4" GridPane.columnIndex="0" GridPane.rowIndex="0">
+                <Label text="BODY PART" styleClass="field-label" />
+                <ComboBox fx:id="bodyPartComboBox"
+                          promptText="Select body part"
+                          maxWidth="Infinity"
+                          styleClass="dark-combo" />
+            </VBox>
+
+            <VBox spacing="4" GridPane.columnIndex="1" GridPane.rowIndex="0">
+                <Label text="THRESHOLD DAYS" styleClass="field-label" />
+                <TextField fx:id="thresholdDaysField"
+                           promptText="Leave blank for 5"
+                           maxWidth="Infinity"
                            styleClass="dark-input" />
             </VBox>
 
-            <VBox spacing="4" minWidth="220" prefWidth="260">
-                <Label text="DATE &amp; TIME" styleClass="field-label" />
-                <TextField fx:id="reminderTimeField"
-                           promptText="yyyy-MM-dd HH:mm"
-                           styleClass="dark-input" />
-            </VBox>
-
-            <VBox spacing="4" minWidth="220" prefWidth="260">
+            <VBox spacing="4" GridPane.columnIndex="0" GridPane.rowIndex="1" GridPane.columnSpan="2">
                 <Label text="NOTE (OPTIONAL)" styleClass="field-label" />
                 <TextField fx:id="reminderNoteField"
                            promptText="Add a short note..."
+                           maxWidth="Infinity"
                            styleClass="dark-input" />
             </VBox>
 
-            <Button text="+ Add"
-                    styleClass="primary-button"
-                    onAction="#addReminder"
-                    style="-fx-padding: 8 20;" />
-        </FlowPane>
+            <HBox alignment="CENTER_RIGHT" GridPane.columnIndex="0" GridPane.rowIndex="2" GridPane.columnSpan="2">
+                <Button text="Save Changes"
+                        styleClass="primary-button"
+                        onAction="#saveReminder"
+                        style="-fx-padding: 8 20;" />
+            </HBox>
+        </GridPane>
     </VBox>
 
 </VBox>

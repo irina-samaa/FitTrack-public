@@ -52,8 +52,8 @@ public class WorkoutController {
     @FXML
     private void initialize() {
         setTypeColumn.setCellValueFactory(cell -> new SimpleStringProperty(cell.getValue().getType()));
-        primaryMetricColumn.setCellValueFactory(cell -> new SimpleDoubleProperty(cell.getValue().getPrimaryMetricValue().doubleValue()));
-        secondaryMetricColumn.setCellValueFactory(cell -> new SimpleDoubleProperty(cell.getValue().getSecondaryMetricValue().doubleValue()));
+        primaryMetricColumn.setCellValueFactory(cell -> new SimpleDoubleProperty(cell.getValue().getFirstMetricValue().doubleValue()));
+        secondaryMetricColumn.setCellValueFactory(cell -> new SimpleDoubleProperty(cell.getValue().getSecondMetricValue().doubleValue()));
         workloadColumn.setCellValueFactory(cell -> new SimpleStringProperty(formatSelectedExerciseWorkload()));
 
         bodyPartListView.setItems(bodyPartNames);
