@@ -158,12 +158,20 @@ public class FitnessTrackerService {
         return dataStore.getReminderService().getTopDueReminder(requireCurrentUser());
     }
 
+    public Reminder getAnnouncementReminder() {
+        return dataStore.getReminderService().getAnnouncementReminder(requireCurrentUser());
+    }
+
     public void createOrUpdateReminder(String bodyPartName, Integer thresholdDays, String note) {
         dataStore.getReminderService().createOrUpdateReminder(requireCurrentUser(), bodyPartName, thresholdDays, note);
     }
 
     public int getInactiveDays(Reminder reminder) {
         return dataStore.getReminderService().getInactiveDays(requireCurrentUser(), reminder);
+    }
+
+    public int getDaysRemaining(Reminder reminder) {
+        return dataStore.getReminderService().getDaysRemaining(requireCurrentUser(), reminder);
     }
 
     public boolean isReminderDue(Reminder reminder) {

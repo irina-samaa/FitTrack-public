@@ -134,16 +134,23 @@ public class DashboardController {
         int dueReminderCount = service.getDueReminderCount();
         upcomingCountLabel.setText(dueReminderCount + " reminder" + (dueReminderCount == 1 ? "" : "s") + " due");
 
-        Reminder topReminder = service.getTopDueReminder();
-        if (topReminder == null) {
-            reminderTitleLabel.setText("No reminders due");
+        Reminder announcementReminder = service.getAnnouncementReminder();
+        if (announcementReminder == null) {
+            reminderTitleLabel.setText("No reminder loaded");
             reminderTimeLabel.setText("Threshold countdown starts after the first logged workout for each body part.");
             return;
         }
 
-        int inactiveDays = service.getInactiveDays(topReminder);
-        reminderTitleLabel.setText(topReminder.getTitle());
-        reminderTimeLabel.setText(topReminder.formatStatusMessage(inactiveDays));
+        int inactiveDays = service.getInactiveDays(announcementReminder);
+        reminderTitleLabel.setText(announcementReminder.getTitle());
+        if (service.isReminderDue(announcementReminder)) {
+            reminderTimeLabel.setText(announcementReminder.formatStatusMessage(inactiveDays));
+            return;
+        }
+
+        int remainingDays = Math.max(service.getDaysRemaining(announcementReminder), 0);
+        reminderTimeLabel.setText(inactiveDays + " inactive day" + (inactiveDays == 1 ? "" : "s")
+            + " | " + remainingDays + " day" + (remainingDays == 1 ? "" : "s") + " until reminder");
     }
 
     private void loadMotivationQuote() {
