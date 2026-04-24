@@ -36,6 +36,21 @@ public abstract class Exercise {
         sets.add(setRecord);
     }
 
+    public void removeSet(SetRecord setRecord) {
+        if (setRecord == null) {
+            throw new IllegalArgumentException("Set record cannot be null.");
+        }
+        sets.remove(setRecord);
+    }
+
+    public void clearSets() {
+        sets.clear();
+    }
+
+    public boolean hasSets() {
+        return !sets.isEmpty();
+    }
+
     public double getTotalVolume() {
         double total = 0;
         for (SetRecord set : sets) {
@@ -47,4 +62,14 @@ public abstract class Exercise {
     public abstract void addSet(int firstMetric, double secondMetric);
 
     public abstract ExerciseType getExerciseType();
+
+    public Exercise copy() {
+        Exercise copy = createCopy();
+        for (SetRecord set : sets) {
+            copy.addSetRecord(set.copy());
+        }
+        return copy;
+    }
+
+    protected abstract Exercise createCopy();
 }

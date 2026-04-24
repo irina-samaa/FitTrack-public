@@ -98,7 +98,7 @@ public class DataStore {
         for (BodyPart bodyPart : bodyParts) {
             if ("Chest".equals(bodyPart.getName()) || "Back".equals(bodyPart.getName())) {
                 for (var exercise : bodyPart.getExercises()) {
-                    session.addExercise(exercise);
+                    session.addExercise(exercise.copy());
                 }
             }
         }
@@ -107,7 +107,7 @@ public class DataStore {
     }
 
     private void seedReminders() {
-        reminderService.scheduleReminder(registeredUser, "Chest Day", LocalDateTime.now().plusDays(1), null);
-        reminderService.scheduleReminder(registeredUser, "Leg Day", LocalDateTime.now().plusDays(3), null);
+        reminderService.scheduleReminder(registeredUser, "Chest Day", LocalDateTime.now().plusDays(1), null, "Push focus + warm up shoulders");
+        reminderService.scheduleReminder(registeredUser, "Leg Day", LocalDateTime.now().plusDays(3), null, null);
     }
 }

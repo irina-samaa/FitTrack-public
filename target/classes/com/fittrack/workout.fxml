@@ -9,14 +9,21 @@
 
     <Label text="Workout Builder" styleClass="screen-title" />
 
-    <HBox alignment="CENTER_RIGHT">
+    <HBox alignment="CENTER_RIGHT" spacing="10">
+        <VBox spacing="4" HBox.hgrow="ALWAYS">
+            <Label text="SESSION NAME" styleClass="field-label" />
+            <TextField fx:id="sessionNameField"
+                       promptText="Workout session name..."
+                       styleClass="dark-input"
+                       maxWidth="320" />
+        </VBox>
         <Button text="Start Workout Session"
                 styleClass="primary-button"
                 onAction="#startWorkoutSession" />
     </HBox>
 
     <FlowPane hgap="12" vgap="12" prefWrapLength="1020" VBox.vgrow="ALWAYS">
-        <VBox styleClass="card" spacing="8" minWidth="260" prefWidth="300">
+        <VBox styleClass="card" spacing="8" minWidth="220" prefWidth="260">
             <Label text="BODY PARTS" styleClass="card-title-accent" />
             <ListView fx:id="bodyPartListView"
                       styleClass="dark-list"
@@ -53,7 +60,7 @@
             </HBox>
         </VBox>
 
-        <VBox styleClass="card" spacing="8" minWidth="360" prefWidth="420">
+        <VBox styleClass="card" spacing="8" minWidth="380" prefWidth="460">
             <Label fx:id="selectedExerciseLabel"
                    text="SETS"
                    styleClass="card-title-accent" />
@@ -62,14 +69,15 @@
                        styleClass="dark-table"
                        VBox.vgrow="ALWAYS">
                 <columns>
-                    <TableColumn fx:id="setTypeColumn" text="Type" minWidth="90" />
-                    <TableColumn fx:id="primaryMetricColumn" text="Metric 1" minWidth="110" />
-                    <TableColumn fx:id="secondaryMetricColumn" text="Metric 2" minWidth="120" />
+                    <TableColumn fx:id="setTypeColumn" text="Type" minWidth="80" />
+                    <TableColumn fx:id="primaryMetricColumn" text="Metric 1" minWidth="95" />
+                    <TableColumn fx:id="secondaryMetricColumn" text="Metric 2" minWidth="105" />
+                    <TableColumn fx:id="workloadColumn" text="Exercise Total" minWidth="110" />
                 </columns>
             </TableView>
 
             <Label fx:id="totalVolumeLabel"
-                   text="Total workload: -"
+                   text="Session workload: -"
                    styleClass="subtitle-text"
                    style="-fx-text-fill: #00E5FF;" />
 
@@ -88,9 +96,14 @@
                                styleClass="dark-input"
                                prefWidth="120" />
                 </VBox>
-                <Button text="+ Set"
+                <Button text="+"
                         styleClass="accent-button"
+                        prefWidth="90"
                         onAction="#addSet" />
+                <Button text="Delete"
+                        styleClass="danger-button"
+                        prefWidth="90"
+                        onAction="#deleteSet" />
             </HBox>
         </VBox>
     </FlowPane>

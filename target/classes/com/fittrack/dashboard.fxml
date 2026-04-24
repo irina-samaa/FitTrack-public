@@ -16,62 +16,54 @@
                 <Label fx:id="todayDateLabel" styleClass="hero-date-label" />
                 <Label fx:id="currentTimeLabel" styleClass="hero-time-label" />
             </VBox>
-
-            <VBox spacing="12" alignment="CENTER_RIGHT">
-                <Label text="TODAY'S RHYTHM" styleClass="card-title-accent" />
-                <Label fx:id="heroStatusLabel" styleClass="hero-status-label" wrapText="true" />
-                <Label fx:id="upcomingCountLabel" styleClass="hero-chip" wrapText="true" />
-            </VBox>
         </HBox>
 
-        <FlowPane hgap="20" vgap="20" prefWrapLength="960">
-            <VBox styleClass="card" spacing="8" minWidth="220" prefWidth="260">
+        <HBox spacing="20" fillHeight="true">
+            <VBox styleClass="card" spacing="8" maxWidth="Infinity" prefWidth="0" HBox.hgrow="ALWAYS">
                 <Label text="TODAY'S WORKOUT" styleClass="card-title-accent" />
                 <Label fx:id="sessionCountLabel" styleClass="card-big-number" />
                 <Label fx:id="lastSessionLabel" styleClass="card-subtitle" wrapText="true" />
             </VBox>
 
-            <VBox styleClass="card" spacing="8" minWidth="220" prefWidth="260">
+            <VBox styleClass="card" spacing="8" maxWidth="Infinity" prefWidth="0" HBox.hgrow="ALWAYS">
                 <Label text="CURRENT BMI" styleClass="card-title-accent" />
                 <Label fx:id="bmiValueLabel" styleClass="card-big-number" />
                 <Label fx:id="bmiCategoryLabel" styleClass="card-subtitle" />
             </VBox>
 
-            <VBox styleClass="card reminder-card" spacing="8" minWidth="220" prefWidth="260">
+            <VBox styleClass="card" spacing="8" maxWidth="Infinity" prefWidth="0" HBox.hgrow="ALWAYS">
                 <Label text="NEXT REMINDER" styleClass="card-title-accent" />
                 <Label fx:id="reminderTitleLabel" styleClass="highlight-title" wrapText="true" />
                 <Label fx:id="reminderTimeLabel" styleClass="card-subtitle" wrapText="true" />
+                <Label fx:id="upcomingCountLabel" styleClass="hero-chip" wrapText="true" />
             </VBox>
-        </FlowPane>
+        </HBox>
 
-        <VBox styleClass="card motivation-card" spacing="8">
-            <Label text="DAILY MOTIVATION" styleClass="card-title-accent" />
-            <Label fx:id="motivationLabel" styleClass="motivation-text" wrapText="true" />
-        </VBox>
-
-        <FlowPane hgap="20" vgap="20" prefWrapLength="960">
-            <VBox styleClass="card visual-card-orange" spacing="12" minWidth="320" prefWidth="430">
-                <Label text="TODAY'S PULSE" styleClass="card-title-accent" />
-                <Label fx:id="readinessLabel" styleClass="body-text" wrapText="true" />
-                <ProgressBar fx:id="readinessProgressBar" prefWidth="Infinity" progress="0.0" styleClass="dashboard-progress-orange" />
-            </VBox>
-
-            <VBox styleClass="card visual-card-cyan" spacing="12" minWidth="320" prefWidth="430">
-                <Label text="CONSISTENCY SNAPSHOT" styleClass="card-title-accent" />
-                <Label fx:id="consistencyLabel" styleClass="body-text" wrapText="true" />
-                <ProgressBar fx:id="consistencyProgressBar" prefWidth="Infinity" progress="0.0" styleClass="dashboard-progress-cyan" />
-            </VBox>
-        </FlowPane>
-
-        <FlowPane hgap="20" vgap="20" prefWrapLength="960" VBox.vgrow="ALWAYS">
-            <VBox styleClass="card" spacing="8" minWidth="320" prefWidth="430">
+        <HBox spacing="20" fillHeight="true" VBox.vgrow="ALWAYS">
+            <VBox styleClass="card" spacing="8" maxWidth="Infinity" prefWidth="0" HBox.hgrow="ALWAYS">
                 <Label text="EXERCISE WORKLOADS" styleClass="card-title-accent" />
-                <ListView fx:id="exerciseWorkloadsListView" prefHeight="150" styleClass="dark-list" />
+                <ListView fx:id="exerciseWorkloadsListView" prefHeight="220" styleClass="dark-list" />
             </VBox>
-            <VBox styleClass="card" spacing="8" minWidth="320" prefWidth="430">
+            <VBox styleClass="card" spacing="8" maxWidth="Infinity" prefWidth="0" HBox.hgrow="ALWAYS">
                 <Label text="SESSION WORKLOADS" styleClass="card-title-accent" />
-                <ListView fx:id="sessionWorkloadsListView" prefHeight="150" styleClass="dark-list" />
+                <ListView fx:id="sessionWorkloadsListView" prefHeight="220" styleClass="dark-list" />
             </VBox>
-        </FlowPane>
+        </HBox>
+
+        <HBox spacing="20" fillHeight="true">
+            <VBox styleClass="card motivation-card" spacing="8" maxWidth="Infinity" prefWidth="0" HBox.hgrow="ALWAYS">
+                <Label text="DAILY MOTIVATION" styleClass="card-title-accent" />
+                <Label fx:id="motivationLabel" styleClass="motivation-text" wrapText="true" />
+            </VBox>
+
+            <StackPane styleClass="streak-spotlight" maxWidth="Infinity" prefWidth="0" HBox.hgrow="ALWAYS">
+                <VBox styleClass="card streak-card" spacing="10" maxWidth="Infinity">
+                    <Label text="HOT STREAK" styleClass="card-title-accent" />
+                    <Label fx:id="streakCountLabel" styleClass="streak-count-label" />
+                    <Label fx:id="streakDetailLabel" styleClass="body-text" wrapText="true" />
+                    <Label fx:id="streakSupportLabel" styleClass="streak-chip" wrapText="true" />
+                </VBox>
+            </StackPane>
+        </HBox>
     </VBox>
 </ScrollPane>

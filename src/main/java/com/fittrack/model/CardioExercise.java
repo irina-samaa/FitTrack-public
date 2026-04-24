@@ -13,4 +13,9 @@ public class CardioExercise extends Exercise {
     public ExerciseType getExerciseType() {
         return ExerciseType.CARDIO;
     }
+
+    @Override
+    protected Exercise createCopy() {
+        return new CardioExercise(getName(), getBodyPart());
+    }
 }

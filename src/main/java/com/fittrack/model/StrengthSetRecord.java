@@ -42,4 +42,9 @@ public class StrengthSetRecord extends SetRecord {
     public double getWorkloadScore() {
         return reps * weight;
     }
+
+    @Override
+    public SetRecord copy() {
+        return new StrengthSetRecord(reps, weight);
+    }
 }

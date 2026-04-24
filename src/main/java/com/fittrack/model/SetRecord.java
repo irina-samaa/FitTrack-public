@@ -20,4 +20,6 @@ public abstract class SetRecord {
     public abstract Number getSecondaryMetricValue();
 
     public abstract double getWorkloadScore();
+
+    public abstract SetRecord copy();
 }

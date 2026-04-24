@@ -42,4 +42,9 @@ public class CardioSetRecord extends SetRecord {
     public double getWorkloadScore() {
         return durationMinutes * distanceKm;
     }
+
+    @Override
+    public SetRecord copy() {
+        return new CardioSetRecord(durationMinutes, distanceKm);
+    }
 }

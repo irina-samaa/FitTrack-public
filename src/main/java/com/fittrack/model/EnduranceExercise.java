@@ -18,4 +18,9 @@ public class EnduranceExercise extends Exercise {
     public ExerciseType getExerciseType() {
         return ExerciseType.ENDURANCE;
     }
+
+    @Override
+    protected Exercise createCopy() {
+        return new EnduranceExercise(getName(), getBodyPart());
+    }
 }

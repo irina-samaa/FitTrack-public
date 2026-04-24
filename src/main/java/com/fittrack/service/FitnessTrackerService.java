@@ -77,19 +77,36 @@ public class FitnessTrackerService {
         exercise.addSet(firstMetric, secondMetric);
     }
 
-    public WorkoutSession startWorkoutSession() {
-        WorkoutSession session = new WorkoutSession(LocalDate.now(), "Workout - " + LocalDate.now());
+    public void deleteSet(String bodyPartName, String exerciseName, SetRecord setRecord) {
+        Exercise exercise = requireExercise(bodyPartName, exerciseName);
+        exercise.removeSet(setRecord);
+    }
+
+    public WorkoutSession startWorkoutSession(String sessionName) {
+        User currentUser = requireCurrentUser();
+        String resolvedSessionName = (sessionName == null || sessionName.isBlank())
+            ? "Workout - " + LocalDate.now()
+            : sessionName.trim();
+        WorkoutSession session = new WorkoutSession(LocalDate.now(), resolvedSessionName);
+        List<Exercise> exercisesToClear = new ArrayList<>();
         for (BodyPart bodyPart : dataStore.getBodyParts()) {
             for (Exercise exercise : bodyPart.getExercises()) {
-                if (!exercise.getSets().isEmpty()) {
-                    session.addExercise(exercise);
+                if (exercise.hasSets()) {
+                    session.addExercise(exercise.copy());
+                    exercisesToClear.add(exercise);
                 }
             }
         }
+        if (session.getExercises().isEmpty()) {
+            throw new IllegalStateException("Add at least one exercise set before logging a session.");
+        }
         dataStore.addSession(session);
+        for (Exercise exercise : exercisesToClear) {
+            exercise.clearSets();
+        }
         
         // Reset repeating reminders since a workout was completed
-        dataStore.getReminderService().resetRepeatingReminders(requireCurrentUser());
+        dataStore.getReminderService().resetRepeatingReminders(currentUser);
         
         return session;
     }
@@ -134,7 +151,11 @@ public class FitnessTrackerService {
     }
 
     public void scheduleReminder(String label, LocalDateTime time, Integer repeatIntervalDays) {
-        dataStore.getReminderService().scheduleReminder(requireCurrentUser(), label, time, repeatIntervalDays);
+        scheduleReminder(label, time, repeatIntervalDays, null);
+    }
+
+    public void scheduleReminder(String label, LocalDateTime time, Integer repeatIntervalDays, String note) {
+        dataStore.getReminderService().scheduleReminder(requireCurrentUser(), label, time, repeatIntervalDays, note);
     }
 
     public Reminder getNextReminder() {

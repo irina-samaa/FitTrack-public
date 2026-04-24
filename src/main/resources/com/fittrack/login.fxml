@@ -4,7 +4,7 @@
 <?import javafx.scene.text.*?>
 
 <!--
-  login.fxml — Màn hình đăng nhập dạng popup.
+  login.fxml - Popup login screen.
   Controller: LoginController.java
 -->
 <VBox xmlns:fx="http://javafx.com/fxml"
@@ -39,13 +39,13 @@
                        onAction="#handleLogin" />
     </VBox>
 
-    <!-- Error Message — ẩn mặc định -->
+    <!-- Error message - hidden by default -->
     <Label fx:id="errorLabel"
            text="Invalid credentials"
            styleClass="error-label"
            visible="false"
            managed="false" />
-           <!-- managed="false" để không chiếm chỗ khi ẩn -->
+    <!-- managed="false" keeps it from taking up layout space when hidden -->
 
     <!-- Login Button -->
     <Button text="LOGIN"

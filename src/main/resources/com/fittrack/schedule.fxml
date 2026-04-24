@@ -2,10 +2,6 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
-<!--
-  schedule.fxml — Màn hình quản lý nhắc nhở.
-  Controller: ScheduleController.java
--->
 <VBox xmlns:fx="http://javafx.com/fxml"
       fx:controller="com.fittrack.controller.ScheduleController"
       spacing="16"
@@ -13,29 +9,20 @@
 
     <Label text="Schedule" styleClass="screen-title" />
 
-    <!-- Label hiện reminder tiếp theo (từ đầu min-heap) -->
-    <!--
-      GỌI BACKEND: ReminderService.getNextReminder() → Reminder.getLabel() / getScheduledTime()
-    -->
     <Label fx:id="nextReminderLabel"
            styleClass="card-subtitle"
            style="-fx-text-fill: #00E5FF; -fx-font-size: 14;" />
 
-    <!-- ===== BẢNG REMINDERS ===== -->
     <VBox styleClass="card" spacing="8" VBox.vgrow="ALWAYS">
         <Label text="UPCOMING REMINDERS" styleClass="card-title-accent" />
 
-        <!--
-          TableView hiện tất cả reminders (sorted từ PriorityQueue).
-          GỌI BACKEND: ReminderService.getAllReminders()
-          → Reminder.getLabel() + getScheduledTime()
-        -->
         <TableView fx:id="reminderTable"
                    styleClass="dark-table"
                    VBox.vgrow="ALWAYS">
             <columns>
                 <TableColumn fx:id="labelColumn" text="Reminder" minWidth="200" />
                 <TableColumn fx:id="timeColumn" text="Scheduled Time" minWidth="200" />
+                <TableColumn fx:id="noteColumn" text="Note" minWidth="220" />
             </columns>
             <placeholder>
                 <Label text="No reminders yet. Add one below!"
@@ -43,23 +30,17 @@
             </placeholder>
         </TableView>
 
-        <!-- Nút Remove Next -->
         <HBox alignment="CENTER_RIGHT">
-            <!--
-              GỌI BACKEND: ReminderService.getNextReminder() (xem trước)
-                         + ReminderService.removeNextReminder() (poll từ min-heap)
-            -->
-            <Button text="✕ Remove Next Reminder"
+            <Button text="Remove Next Reminder"
                     styleClass="danger-button"
                     onAction="#removeNextReminder" />
         </HBox>
     </VBox>
 
-    <!-- ===== FORM THÊM REMINDER ===== -->
     <VBox styleClass="card" spacing="10">
         <Label text="ADD REMINDER" styleClass="card-title-accent" />
 
-        <FlowPane hgap="12" vgap="12">
+        <FlowPane hgap="12" vgap="12" prefWrapLength="1020">
             <VBox spacing="4" minWidth="220" prefWidth="260">
                 <Label text="LABEL" styleClass="field-label" />
                 <TextField fx:id="reminderLabelField"
@@ -67,9 +48,9 @@
                            styleClass="dark-input" />
             </VBox>
 
-            <VBox spacing="4" minWidth="180" prefWidth="220">
+            <VBox spacing="4" minWidth="220" prefWidth="260">
                 <Label text="TYPE" styleClass="field-label" />
-                <ComboBox fx:id="reminderTypeComboBox" styleClass="dark-combo-box" maxWidth="Infinity" />
+                <ComboBox fx:id="reminderTypeComboBox" styleClass="dark-combo" maxWidth="Infinity" />
             </VBox>
 
             <VBox spacing="4" minWidth="220" prefWidth="260">
@@ -79,7 +60,14 @@
                            styleClass="dark-input" />
             </VBox>
 
-            <Button text="＋ Add"
+            <VBox spacing="4" minWidth="220" prefWidth="260">
+                <Label text="NOTE (OPTIONAL)" styleClass="field-label" />
+                <TextField fx:id="reminderNoteField"
+                           promptText="Add a short note..."
+                           styleClass="dark-input" />
+            </VBox>
+
+            <Button text="+ Add"
                     styleClass="primary-button"
                     onAction="#addReminder"
                     style="-fx-padding: 8 20;" />

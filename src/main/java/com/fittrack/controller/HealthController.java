@@ -37,7 +37,7 @@ public class HealthController {
             double height = Double.parseDouble(heightField.getText().trim());
 
             if (weight <= 0 || height <= 0) {
-                showError("Can nang va chieu cao phai > 0!");
+                showError("Weight and height must be greater than 0.");
                 return;
             }
 
@@ -46,7 +46,7 @@ public class HealthController {
             currentHeightLabel.setText("Current height: " + height + " cm");
             calculateAndDisplay();
         } catch (IllegalArgumentException e) {
-            showError("Nhap so hop le cho can nang va chieu cao!");
+            showError("Enter valid numbers for weight and height.");
         }
     }
 

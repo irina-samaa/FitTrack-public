@@ -13,4 +13,9 @@ public class StrengthExercise extends Exercise {
     public ExerciseType getExerciseType() {
         return ExerciseType.STRENGTH;
     }
+
+    @Override
+    protected Exercise createCopy() {
+        return new StrengthExercise(getName(), getBodyPart());
+    }
 }

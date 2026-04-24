@@ -9,8 +9,8 @@ import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
+import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
-import javafx.scene.control.ProgressBar;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.util.Duration;
@@ -19,11 +19,17 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 
 public class DashboardController {
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("EEEE, MMM d, yyyy");
     private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm:ss");
+    private static final DateTimeFormatter SHORT_DATE_FORMATTER = DateTimeFormatter.ofPattern("MMM d");
 
     private static final String[] QUOTES = {
         "No pain, no gain. Push through!",
@@ -42,27 +48,26 @@ public class DashboardController {
     @FXML private Label motivationLabel;
     @FXML private Label todayDateLabel;
     @FXML private Label currentTimeLabel;
-    @FXML private Label heroStatusLabel;
     @FXML private Label upcomingCountLabel;
-    @FXML private Label readinessLabel;
-    @FXML private Label consistencyLabel;
+    @FXML private Label streakCountLabel;
+    @FXML private Label streakDetailLabel;
+    @FXML private Label streakSupportLabel;
     @FXML private ListView<String> exerciseWorkloadsListView;
     @FXML private ListView<String> sessionWorkloadsListView;
-    @FXML private ProgressBar readinessProgressBar;
-    @FXML private ProgressBar consistencyProgressBar;
 
     private final FitnessTrackerService service = FitnessTrackerService.getInstance();
     private Timeline clockTimeline;
 
     @FXML
     private void initialize() {
+        configureWorkloadLists();
         loadDateTimeHeader();
         loadWorkoutCard();
         loadBmiCard();
         loadReminderCard();
-        loadMotivationQuote();
-        loadVisualSummary();
         loadPastExercises();
+        loadMotivationQuote();
+        loadStreakCard();
     }
 
     private void loadDateTimeHeader() {
@@ -83,7 +88,6 @@ public class DashboardController {
         if (service.getCurrentUser() == null) {
             sessionCountLabel.setText("0 sessions logged");
             lastSessionLabel.setText("Latest: log in to view workout history.");
-            heroStatusLabel.setText("Log in to unlock today's workout overview.");
             return;
         }
 
@@ -91,19 +95,12 @@ public class DashboardController {
         sessionCountLabel.setText(sessions.size() + " sessions logged");
         if (sessions.isEmpty()) {
             lastSessionLabel.setText("Latest: no workouts yet - go crush it!");
-            heroStatusLabel.setText("Fresh start today. Your next session will set the tone.");
             return;
         }
 
         WorkoutSession latest = sessions.get(sessions.size() - 1);
         LocalDate latestDate = LocalDate.parse(latest.getDate());
         lastSessionLabel.setText("Latest: " + latest.getSessionName() + " on " + latestDate);
-
-        long workoutsThisWeek = sessions.stream()
-            .map(session -> LocalDate.parse(session.getDate()))
-            .filter(date -> !date.isBefore(LocalDate.now().minusDays(6)))
-            .count();
-        heroStatusLabel.setText(workoutsThisWeek + " workout" + (workoutsThisWeek == 1 ? "" : "s") + " tracked in the last 7 days.");
     }
 
     private void loadBmiCard() {
@@ -154,39 +151,81 @@ public class DashboardController {
         motivationLabel.setText("\"" + QUOTES[index] + "\"");
     }
 
-    private void loadVisualSummary() {
+    private void loadStreakCard() {
         if (service.getCurrentUser() == null) {
-            readinessLabel.setText("Log in to see your training readiness.");
-            consistencyLabel.setText("Log in to see your weekly consistency.");
-            readinessProgressBar.setProgress(0.0);
-            consistencyProgressBar.setProgress(0.0);
+            streakCountLabel.setText("\uD83D\uDD25 --");
+            streakDetailLabel.setText("Log in to see your current workout streak.");
+            streakSupportLabel.setText("Your streak summary will appear here.");
             return;
         }
 
-        String bmiCategory = service.getBmiCategory();
-        double readinessScore = switch (bmiCategory) {
-            case "Normal" -> 0.88;
-            case "Underweight" -> 0.62;
-            case "Overweight" -> 0.58;
-            case "Obese" -> 0.42;
-            default -> 0.5;
-        };
-
-        boolean hasUpcomingReminder = service.getNextReminder() != null;
-        if (hasUpcomingReminder) {
-            readinessScore = Math.min(1.0, readinessScore + 0.07);
+        Set<LocalDate> workoutDays = new TreeSet<>();
+        for (WorkoutSession session : service.getSessions()) {
+            workoutDays.add(LocalDate.parse(session.getDate()));
         }
 
-        long recentSessions = service.getSessions().stream()
-            .map(session -> LocalDate.parse(session.getDate()))
+        long recentSessions = workoutDays.stream()
             .filter(date -> !date.isBefore(LocalDate.now().minusDays(6)))
             .count();
-        double consistencyScore = Math.min(1.0, recentSessions / 4.0);
+        int streak = calculateStreak(workoutDays);
 
-        readinessProgressBar.setProgress(readinessScore);
-        consistencyProgressBar.setProgress(consistencyScore);
-        readinessLabel.setText(String.format("Body status looks %s. Readiness score: %d%%.", bmiCategory.toLowerCase(), Math.round(readinessScore * 100)));
-        consistencyLabel.setText(String.format("%d workout%s recorded in the last 7 days.", recentSessions, recentSessions == 1 ? "" : "s"));
+        streakCountLabel.setText("\uD83D\uDD25 " + streak + " day" + (streak == 1 ? "" : "s"));
+        if (streak == 0) {
+            streakDetailLabel.setText("No active streak yet. Your next workout can light it up.");
+        } else {
+            streakDetailLabel.setText("You have trained on " + streak + " consecutive day" + (streak == 1 ? "" : "s") + ". Keep the fire going.");
+        }
+
+        if (workoutDays.isEmpty()) {
+            streakSupportLabel.setText("No workout history yet");
+            return;
+        }
+
+        LocalDate latestWorkout = workoutDays.stream().max(LocalDate::compareTo).orElse(LocalDate.now());
+        streakSupportLabel.setText(recentSessions + " active day" + (recentSessions == 1 ? "" : "s")
+            + " in the last 7 days | Last workout " + SHORT_DATE_FORMATTER.format(latestWorkout));
+    }
+
+    private int calculateStreak(Set<LocalDate> workoutDays) {
+        if (workoutDays.isEmpty()) {
+            return 0;
+        }
+
+        LocalDate cursor = LocalDate.now();
+        if (!workoutDays.contains(cursor)) {
+            cursor = cursor.minusDays(1);
+            if (!workoutDays.contains(cursor)) {
+                return 0;
+            }
+        }
+
+        int streak = 0;
+        while (workoutDays.contains(cursor)) {
+            streak++;
+            cursor = cursor.minusDays(1);
+        }
+        return streak;
+    }
+
+    private void configureWorkloadLists() {
+        sessionWorkloadsListView.setCellFactory(listView -> new ListCell<>() {
+            @Override
+            protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+                getStyleClass().remove("today-workload-cell");
+                setWrapText(true);
+
+                if (empty || item == null) {
+                    setText(null);
+                    return;
+                }
+
+                setText(item);
+                if (item.startsWith("TODAY")) {
+                    getStyleClass().add("today-workload-cell");
+                }
+            }
+        });
     }
 
     private void loadPastExercises() {
@@ -200,24 +239,50 @@ public class DashboardController {
         
         ObservableList<String> exercises = FXCollections.observableArrayList();
         ObservableList<String> sessions = FXCollections.observableArrayList();
+        Map<LocalDate, Double> dailyWorkloads = new LinkedHashMap<>();
+        Map<LocalDate, Integer> dailySessionCounts = new LinkedHashMap<>();
         
         for (WorkoutSession session : service.getSessions()) {
-            double sessionTotalWorkload = 0;
             for (Exercise exercise : session.getExercises()) {
                 double exerciseTotalWorkload = 0;
                 for (SetRecord set : exercise.getSets()) {
                     exerciseTotalWorkload += set.getWorkloadScore();
                 }
-                sessionTotalWorkload += exerciseTotalWorkload;
                 exercises.add(exercise.getName() + " | Workload: " + String.format("%.1f", exerciseTotalWorkload));
             }
-            sessions.add(session.getDate() + " - " + session.getSessionName() + "\nTotal: " + String.format("%.1f", sessionTotalWorkload));
+
+            LocalDate sessionDate = LocalDate.parse(session.getDate());
+            dailyWorkloads.merge(sessionDate, session.getTotalWorkload(), Double::sum);
+            dailySessionCounts.merge(sessionDate, 1, Integer::sum);
         }
-        
+
+        LocalDate today = LocalDate.now();
+        sessions.add(buildDailyWorkloadItem(
+            today,
+            dailyWorkloads.getOrDefault(today, 0.0),
+            dailySessionCounts.getOrDefault(today, 0),
+            true
+        ));
+        dailyWorkloads.entrySet().stream()
+            .filter(entry -> !entry.getKey().equals(today))
+            .sorted(Map.Entry.<LocalDate, Double>comparingByKey(Comparator.reverseOrder()))
+            .forEach(entry -> sessions.add(buildDailyWorkloadItem(
+                entry.getKey(),
+                entry.getValue(),
+                dailySessionCounts.getOrDefault(entry.getKey(), 0),
+                false
+            )));
+
         if (exercises.isEmpty()) exercises.add("No past exercises found.");
-        if (sessions.isEmpty()) sessions.add("No session records found.");
         
         exerciseWorkloadsListView.setItems(exercises);
         sessionWorkloadsListView.setItems(sessions);
+    }
+
+    private String buildDailyWorkloadItem(LocalDate date, double totalWorkload, int sessionCount, boolean today) {
+        String title = today ? "TODAY • " + SHORT_DATE_FORMATTER.format(date) : DATE_FORMATTER.format(date);
+        return title
+            + "\nDaily total: " + String.format("%.1f", totalWorkload)
+            + "\nSessions: " + sessionCount;
     }
 }

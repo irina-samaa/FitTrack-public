@@ -3,7 +3,7 @@
 <?import javafx.scene.layout.*?>
 
 <!--
-  health.fxml — Màn hình theo dõi sức khỏe và BMI.
+  health.fxml - Health metrics and BMI screen.
   Controller: HealthController.java
 -->
 <VBox xmlns:fx="http://javafx.com/fxml"
@@ -13,16 +13,16 @@
 
     <Label text="Health Metrics" styleClass="screen-title" />
 
-    <!-- Hiện giá trị hiện tại -->
+    <!-- Display the current values -->
     <!--
-      GỌI BACKEND: HealthMetrics.getWeight() + getHeight()
+      BACKEND CALL: HealthMetrics.getWeight() + getHeight()
     -->
     <FlowPane hgap="24" vgap="12">
         <Label fx:id="currentWeightLabel" styleClass="subtitle-text" />
         <Label fx:id="currentHeightLabel" styleClass="subtitle-text" />
     </FlowPane>
 
-    <!-- ===== FORM INPUT ===== -->
+    <!-- ===== INPUT FORM ===== -->
     <VBox styleClass="card" spacing="14">
         <Label text="UPDATE MEASUREMENTS" styleClass="card-title-accent" />
 
@@ -45,8 +45,8 @@
             </VBox>
 
             <!--
-              GỌI BACKEND: HealthMetrics.updateWeight(kg) + updateHeight(cm)
-              Lưu ý: updateWeight() APPEND vào weightHistory!
+              BACKEND CALL: HealthMetrics.updateWeight(kg) + updateHeight(cm)
+              Note: updateWeight() appends to weightHistory.
             -->
             <Button text="Update"
                     styleClass="primary-button"
@@ -55,32 +55,32 @@
         </FlowPane>
     </VBox>
 
-    <!-- ===== KẾT QUẢ BMI ===== -->
+    <!-- ===== BMI RESULT ===== -->
     <FlowPane hgap="20" vgap="20">
 
-        <!-- BMI Number Card (to, đậm) -->
+        <!-- BMI number card (large, bold) -->
         <VBox styleClass="card" spacing="8" alignment="CENTER"
               minWidth="180" prefWidth="220">
             <Label text="BMI" styleClass="card-title-accent" />
             <!--
-              GỌI BACKEND: HealthMetrics.calculateBMI()
+              BACKEND CALL: HealthMetrics.calculateBMI()
             -->
             <Label fx:id="bmiResultLabel"
                    styleClass="bmi-number"
                    style="-fx-font-size: 56; -fx-font-weight: bold; -fx-text-fill: #FF4500;" />
 
             <!--
-              GỌI BACKEND: HealthMetrics.getBMICategory()
-              Color-coded bởi HealthController.calculateAndDisplay()
+              BACKEND CALL: HealthMetrics.getBMICategory()
+              Color is set by HealthController.calculateAndDisplay()
             -->
-            <Label fx:id="bmiCategoryBadge" text="—" />
+            <Label fx:id="bmiCategoryBadge" text="-" />
         </VBox>
 
         <!-- Recommendation Card -->
         <VBox styleClass="card" spacing="8" minWidth="320" prefWidth="520">
             <Label text="RECOMMENDATION" styleClass="card-title-accent" />
             <!--
-              GỌI BACKEND: HealthMetrics.getHealthRecommendation()
+              BACKEND CALL: HealthMetrics.getHealthRecommendation()
             -->
             <Label fx:id="recommendationLabel"
                    styleClass="body-text"
@@ -90,10 +90,10 @@
             <!-- BMI Reference Table (hardcoded) -->
             <Separator />
             <Label text="BMI Categories:" styleClass="field-label" />
-            <Label text="&lt; 18.5 → Underweight" style="-fx-text-fill: #00E5FF; -fx-font-size: 12;" />
-            <Label text="18.5 – 24.9 → Normal" style="-fx-text-fill: #39FF14; -fx-font-size: 12;" />
-            <Label text="25 – 29.9 → Overweight" style="-fx-text-fill: #FFD700; -fx-font-size: 12;" />
-            <Label text="≥ 30 → Obese" style="-fx-text-fill: #FF4500; -fx-font-size: 12;" />
+            <Label text="&lt; 18.5 -> Underweight" style="-fx-text-fill: #00E5FF; -fx-font-size: 12;" />
+            <Label text="18.5 - 24.9 -> Normal" style="-fx-text-fill: #39FF14; -fx-font-size: 12;" />
+            <Label text="25 - 29.9 -> Overweight" style="-fx-text-fill: #FFD700; -fx-font-size: 12;" />
+            <Label text="&gt;= 30 -> Obese" style="-fx-text-fill: #FF4500; -fx-font-size: 12;" />
         </VBox>
 
     </FlowPane>

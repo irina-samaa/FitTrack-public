@@ -3,9 +3,9 @@
 <?import javafx.scene.layout.*?>
 
 <!--
-  main.fxml — Cửa sổ chính với sidebar và content area.
+  main.fxml - Main window with a sidebar and content area.
   Controller: MainController.java
-  Layout: BorderPane (LEFT = sidebar, TOP = topbar, CENTER = content)
+  Layout: BorderPane (LEFT = sidebar, TOP = top bar, CENTER = content)
 -->
 <BorderPane fx:id="mainPane" xmlns:fx="http://javafx.com/fxml"
             fx:controller="com.fittrack.controller.MainController"
@@ -14,10 +14,10 @@
     <!-- ===== TOP BAR ===== -->
     <top>
         <HBox styleClass="top-bar" alignment="CENTER_LEFT" spacing="12">
-            <!-- App name bên trái -->
+            <!-- App name on the left -->
             <Label text="🔥 FitTrack" styleClass="app-title-small" />
 
-            <!-- Spacer đẩy username + buttons sang phải -->
+            <!-- Spacer that pushes the username and buttons to the right -->
             <Region HBox.hgrow="ALWAYS" />
 
             <!-- Username -->
@@ -31,11 +31,11 @@
         </HBox>
     </top>
 
-    <!-- ===== SIDEBAR (bên trái) ===== -->
+    <!-- ===== SIDEBAR (LEFT) ===== -->
     <left>
         <VBox styleClass="sidebar" spacing="4" style="-fx-padding: 16 8;">
 
-            <!-- Nav buttons — mỗi button gọi navigateTo() trong MainController -->
+            <!-- Navigation buttons - each one calls navigateTo() in MainController -->
             <Button text="🏠  Home"
                     styleClass="sidebar-button"
                     maxWidth="Infinity"
@@ -61,7 +61,7 @@
                     maxWidth="Infinity"
                     onAction="#goProgress" />
 
-            <!-- Spacer đẩy version xuống đáy -->
+            <!-- Spacer that pushes the version label to the bottom -->
             <Region VBox.vgrow="ALWAYS" />
 
             <Label text="FitTrack v1.0" styleClass="hint-text"
@@ -69,16 +69,16 @@
         </VBox>
     </left>
 
-    <!-- ===== CENTER: Content area — được swap bởi MainController.navigateTo() ===== -->
+    <!-- ===== CENTER: Content area - swapped by MainController.navigateTo() ===== -->
     <center>
         <!--
-          Vùng này sẽ được thay thế động bằng:
-          - dashboard.fxml (mặc định)
+          This area is replaced dynamically with:
+          - dashboard.fxml (default)
           - workout.fxml
           - schedule.fxml
           - health.fxml
           - progress.fxml
-          Xem MainController.navigateTo() để biết cách hoạt động.
+          See MainController.navigateTo() for the loading flow.
         -->
         <StackPane fx:id="contentArea" style="-fx-background-color: #0F0F0F;" />
     </center>

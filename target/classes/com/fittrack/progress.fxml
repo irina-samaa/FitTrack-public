@@ -4,7 +4,7 @@
 <?import javafx.scene.layout.*?>
 
 <!--
-  progress.fxml — Màn hình biểu đồ cân nặng.
+  progress.fxml - Weight progress chart screen.
   Controller: ProgressController.java
 -->
 <VBox xmlns:fx="http://javafx.com/fxml"
@@ -14,13 +14,13 @@
 
     <Label text="Progress" styleClass="screen-title" />
 
-    <!-- Toolbar: ComboBox chọn window + nút Refresh -->
+    <!-- Toolbar: ComboBox for the window size and a Refresh button -->
     <HBox spacing="12" alignment="CENTER_LEFT" styleClass="card">
         <Label text="MOVING AVERAGE WINDOW:" styleClass="field-label" />
 
         <!--
-          GỌI BACKEND: ProgressTracker.getMovingAverage(window)
-          ComboBox chứa [2, 3, 5] — thay đổi window thì refresh chart
+          BACKEND CALL: ProgressTracker.getMovingAverage(window)
+          The ComboBox contains [2, 3, 5] - changing the window refreshes the chart
         -->
         <ComboBox fx:id="windowComboBox" styleClass="dark-combo" />
 
@@ -32,12 +32,12 @@
                 onAction="#refreshChart" />
     </HBox>
 
-    <!-- ===== LINECHART ===== -->
+    <!-- ===== LINE CHART ===== -->
     <!--
       2 Series:
-      Series 1 "Weight (kg)" — GỌI BACKEND: HealthMetrics.getWeightHistory()
-      Series 2 "Moving Avg"  — GỌI BACKEND: ProgressTracker.getMovingAverage(window)
-      Labels X-axis          — GỌI BACKEND: ProgressTracker.getLabels()
+      Series 1 "Weight (kg)" - BACKEND CALL: HealthMetrics.getWeightHistory()
+      Series 2 "Moving Avg"  - BACKEND CALL: ProgressTracker.getMovingAverage(window)
+      X-axis labels          - BACKEND CALL: ProgressTracker.getLabels()
     -->
     <LineChart fx:id="weightChart"
                styleClass="dark-chart"

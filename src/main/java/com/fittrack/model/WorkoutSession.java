@@ -38,6 +38,14 @@ public class WorkoutSession {
         return sessionName;
     }
 
+    public double getTotalWorkload() {
+        double total = 0;
+        for (Exercise exercise : exercises) {
+            total += exercise.getTotalVolume();
+        }
+        return total;
+    }
+
     public Exercise findExercise(String name) {
         for (Exercise exercise : exercises) {
             if (exercise.getName().equalsIgnoreCase(name)) {

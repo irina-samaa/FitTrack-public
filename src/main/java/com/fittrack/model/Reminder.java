@@ -9,11 +9,17 @@ public class Reminder implements Comparable<Reminder> {
     private final String label;
     private final LocalDateTime scheduledTime;
     private final Integer repeatIntervalDays;
+    private final String note;
 
     public Reminder(String label, LocalDateTime scheduledTime, Integer repeatIntervalDays) {
+        this(label, scheduledTime, repeatIntervalDays, null);
+    }
+
+    public Reminder(String label, LocalDateTime scheduledTime, Integer repeatIntervalDays, String note) {
         this.label = label;
         this.scheduledTime = scheduledTime;
         this.repeatIntervalDays = repeatIntervalDays;
+        this.note = (note == null || note.isBlank()) ? null : note.trim();
     }
 
     public String getLabel() {
@@ -28,6 +34,10 @@ public class Reminder implements Comparable<Reminder> {
         return repeatIntervalDays;
     }
 
+    public String getNote() {
+        return note;
+    }
+
     @Override
     public int compareTo(Reminder other) {
         return scheduledTime.compareTo(other.scheduledTime);
@@ -36,8 +46,12 @@ public class Reminder implements Comparable<Reminder> {
     @Override
     public String toString() {
         if (repeatIntervalDays != null) {
-            return label + " @ " + scheduledTime.format(FORMATTER) + " (Repeats every " + repeatIntervalDays + " days)";
+            return note == null
+                ? label + " @ " + scheduledTime.format(FORMATTER) + " (Repeats every " + repeatIntervalDays + " days)"
+                : label + " @ " + scheduledTime.format(FORMATTER) + " (Repeats every " + repeatIntervalDays + " days) | Note: " + note;
         }
-        return label + " @ " + scheduledTime.format(FORMATTER);
+        return note == null
+            ? label + " @ " + scheduledTime.format(FORMATTER)
+            : label + " @ " + scheduledTime.format(FORMATTER) + " | Note: " + note;
     }
 }

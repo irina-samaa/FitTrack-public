@@ -19,17 +19,21 @@ import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
 
+import java.time.LocalDate;
+
 public class WorkoutController {
     @FXML private ListView<String> bodyPartListView;
     @FXML private TextField newBodyPartField;
     @FXML private ListView<String> exerciseListView;
     @FXML private TextField newExerciseField;
     @FXML private ComboBox<String> exerciseTypeComboBox;
+    @FXML private TextField sessionNameField;
     @FXML private Label selectedBodyPartLabel;
     @FXML private TableView<SetRecord> setTableView;
     @FXML private TableColumn<SetRecord, String> setTypeColumn;
     @FXML private TableColumn<SetRecord, Number> primaryMetricColumn;
     @FXML private TableColumn<SetRecord, Number> secondaryMetricColumn;
+    @FXML private TableColumn<SetRecord, String> workloadColumn;
     @FXML private TextField firstMetricField;
     @FXML private TextField secondMetricField;
     @FXML private Label firstMetricLabel;
@@ -50,9 +54,11 @@ public class WorkoutController {
         setTypeColumn.setCellValueFactory(cell -> new SimpleStringProperty(cell.getValue().getType()));
         primaryMetricColumn.setCellValueFactory(cell -> new SimpleDoubleProperty(cell.getValue().getPrimaryMetricValue().doubleValue()));
         secondaryMetricColumn.setCellValueFactory(cell -> new SimpleDoubleProperty(cell.getValue().getSecondaryMetricValue().doubleValue()));
+        workloadColumn.setCellValueFactory(cell -> new SimpleStringProperty(formatSelectedExerciseWorkload()));
 
         bodyPartListView.setItems(bodyPartNames);
         exerciseListView.setItems(exerciseNames);
+        setTableView.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
         setTableView.setItems(setItems);
 
         exerciseTypeComboBox.getItems().addAll(
@@ -66,6 +72,7 @@ public class WorkoutController {
         bodyPartListView.getSelectionModel().selectedItemProperty().addListener((obs, oldValue, newValue) -> onBodyPartSelected(newValue));
         exerciseListView.getSelectionModel().selectedItemProperty().addListener((obs, oldValue, newValue) -> onExerciseSelected(newValue));
 
+        sessionNameField.setText(buildDefaultSessionName());
         updateMetricInputs(ExerciseType.STRENGTH);
         loadBodyParts();
     }
@@ -82,6 +89,8 @@ public class WorkoutController {
         setItems.clear();
         selectedExercise = null;
         selectedBodyPart = null;
+        selectedExerciseLabel.setText("SETS");
+        refreshSessionWorkloadLabel();
 
         if (bodyPartName == null) {
             return;
@@ -101,6 +110,7 @@ public class WorkoutController {
     private void onExerciseSelected(String exerciseDisplayName) {
         setItems.clear();
         selectedExercise = null;
+        refreshSessionWorkloadLabel();
 
         if (exerciseDisplayName == null || selectedBodyPart == null) {
             return;
@@ -115,14 +125,15 @@ public class WorkoutController {
         selectedExerciseLabel.setText("Sets - " + exerciseName + " [" + selectedExercise.getExerciseType().getDisplayName() + "]");
         setItems.setAll(selectedExercise.getSets());
         updateMetricInputs(selectedExercise.getExerciseType());
-        totalVolumeLabel.setText(String.format("Total workload: %.2f", selectedExercise.getTotalVolume()));
+        refreshSessionWorkloadLabel();
+        setTableView.refresh();
     }
 
     @FXML
     private void addBodyPart() {
         String name = newBodyPartField.getText().trim();
         if (name.isEmpty()) {
-            showAlert("Nhap ten body part!");
+            showAlert("Enter a body part name.");
             return;
         }
 
@@ -134,13 +145,13 @@ public class WorkoutController {
     @FXML
     private void addExercise() {
         if (selectedBodyPart == null) {
-            showAlert("Chon mot Body Part truoc!");
+            showAlert("Select a body part first.");
             return;
         }
 
         String name = newExerciseField.getText().trim();
         if (name.isEmpty()) {
-            showAlert("Nhap ten exercise!");
+            showAlert("Enter an exercise name.");
             return;
         }
 
@@ -148,12 +159,13 @@ public class WorkoutController {
         service.createExercise(selectedBodyPart.getName(), name, type);
         newExerciseField.clear();
         onBodyPartSelected(selectedBodyPart.getName());
+        exerciseListView.getSelectionModel().select(buildExerciseDisplayName(service.findExercise(selectedBodyPart.getName(), name)));
     }
 
     @FXML
     private void addSet() {
         if (selectedExercise == null || selectedBodyPart == null) {
-            showAlert("Chon mot Exercise truoc!");
+            showAlert("Select an exercise first.");
             return;
         }
 
@@ -163,18 +175,54 @@ public class WorkoutController {
 
             service.addSet(selectedBodyPart.getName(), selectedExercise.getName(), firstMetric, secondMetric);
             setItems.setAll(selectedExercise.getSets());
-            totalVolumeLabel.setText(String.format("Total workload: %.2f", selectedExercise.getTotalVolume()));
+            refreshSessionWorkloadLabel();
+            setTableView.refresh();
             firstMetricField.clear();
             secondMetricField.clear();
         } catch (NumberFormatException e) {
-            showAlert("Metric 1 phai la so nguyen, Metric 2 phai la so!");
+            showAlert("Metric 1 must be a whole number and Metric 2 must be numeric.");
+        } catch (IllegalArgumentException e) {
+            showAlert(e.getMessage());
         }
     }
 
     @FXML
     private void startWorkoutSession() {
-        WorkoutSession session = service.startWorkoutSession();
-        showAlert("Session logged!\n" + session.getSummary());
+        String selectedBodyPartName = selectedBodyPart == null ? null : selectedBodyPart.getName();
+        String selectedExerciseName = selectedExercise == null ? null : selectedExercise.getName();
+
+        try {
+            WorkoutSession session = service.startWorkoutSession(sessionNameField.getText());
+            loadBodyParts();
+            restoreSelection(selectedBodyPartName, selectedExerciseName);
+            sessionNameField.setText(buildDefaultSessionName());
+            showAlert("Session logged!\n" + session.getSummary());
+        } catch (IllegalStateException e) {
+            showAlert(e.getMessage());
+        }
+    }
+
+    @FXML
+    private void deleteSet() {
+        if (selectedExercise == null || selectedBodyPart == null) {
+            showAlert("Select an exercise first.");
+            return;
+        }
+
+        SetRecord selectedSet = setTableView.getSelectionModel().getSelectedItem();
+        if (selectedSet == null) {
+            showAlert("Select a set to delete.");
+            return;
+        }
+
+        service.deleteSet(selectedBodyPart.getName(), selectedExercise.getName(), selectedSet);
+        setItems.setAll(selectedExercise.getSets());
+        refreshSessionWorkloadLabel();
+        setTableView.refresh();
+        setTableView.getSelectionModel().clearSelection();
+        if (selectedExercise.getSets().isEmpty()) {
+            refreshSessionWorkloadLabel();
+        }
     }
 
     private void updateMetricInputs(ExerciseType type) {
@@ -200,9 +248,33 @@ public class WorkoutController {
         }
         primaryMetricColumn.setText(firstMetricLabel.getText());
         secondaryMetricColumn.setText(secondMetricLabel.getText());
-        if (selectedExercise == null) {
-            totalVolumeLabel.setText("Total workload: -");
+        refreshSessionWorkloadLabel();
+    }
+
+    private void refreshSessionWorkloadLabel() {
+        double sessionWorkload = calculateCurrentSessionWorkload();
+        if (sessionWorkload <= 0) {
+            totalVolumeLabel.setText("Session workload: -");
+            return;
         }
+        totalVolumeLabel.setText(String.format("Session workload: %.2f", sessionWorkload));
+    }
+
+    private double calculateCurrentSessionWorkload() {
+        double total = 0;
+        for (BodyPart bodyPart : service.getBodyParts()) {
+            for (Exercise exercise : bodyPart.getExercises()) {
+                total += exercise.getTotalVolume();
+            }
+        }
+        return total;
+    }
+
+    private String formatSelectedExerciseWorkload() {
+        if (selectedExercise == null) {
+            return "-";
+        }
+        return String.format("%.2f", selectedExercise.getTotalVolume());
     }
 
     private String buildExerciseDisplayName(Exercise exercise) {
@@ -211,6 +283,29 @@ public class WorkoutController {
 
     private String extractExerciseName(String exerciseDisplayName) {
         return exerciseDisplayName.replaceAll("\\s+\\(.+\\)$", "");
+    }
+
+    private String buildDefaultSessionName() {
+        return "Workout - " + LocalDate.now();
+    }
+
+    private void restoreSelection(String bodyPartName, String exerciseName) {
+        if (bodyPartName == null) {
+            onBodyPartSelected(null);
+            return;
+        }
+
+        bodyPartListView.getSelectionModel().select(bodyPartName);
+        onBodyPartSelected(bodyPartName);
+
+        if (exerciseName != null) {
+            Exercise exercise = service.findExercise(bodyPartName, exerciseName);
+            if (exercise != null) {
+                String exerciseDisplayName = buildExerciseDisplayName(exercise);
+                exerciseListView.getSelectionModel().select(exerciseDisplayName);
+                onExerciseSelected(exerciseDisplayName);
+            }
+        }
     }
 
     private void showAlert(String message) {

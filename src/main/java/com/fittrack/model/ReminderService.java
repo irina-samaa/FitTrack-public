@@ -10,7 +10,11 @@ public class ReminderService {
     private final Map<String, PriorityQueue<Reminder>> remindersByUser = new HashMap<>();
 
     public void scheduleReminder(User user, String label, LocalDateTime time, Integer repeatIntervalDays) {
-        remindersFor(user).add(new Reminder(label, time, repeatIntervalDays));
+        scheduleReminder(user, label, time, repeatIntervalDays, null);
+    }
+
+    public void scheduleReminder(User user, String label, LocalDateTime time, Integer repeatIntervalDays, String note) {
+        remindersFor(user).add(new Reminder(label, time, repeatIntervalDays, note));
     }
 
     public Reminder getNextReminder(User user) {
@@ -38,8 +42,12 @@ public class ReminderService {
         while (!currentReminders.isEmpty()) {
             Reminder r = currentReminders.poll();
             if (r.getRepeatIntervalDays() != null) {
-                // It's a repeating reminder, update its time
-                toReAdd.add(new Reminder(r.getLabel(), LocalDateTime.now().plusDays(r.getRepeatIntervalDays()), r.getRepeatIntervalDays()));
+                toReAdd.add(new Reminder(
+                    r.getLabel(),
+                    LocalDateTime.now().plusDays(r.getRepeatIntervalDays()),
+                    r.getRepeatIntervalDays(),
+                    r.getNote()
+                ));
             } else {
                 toKeep.add(r);
             }

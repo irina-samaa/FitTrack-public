@@ -53,7 +53,7 @@ public class MainController {
             Parent view = loader.load();
             mainPane.setCenter(view);
         } catch (Exception e) {
-            System.out.println("Loi khi load view " + viewName + ": " + e.getMessage());
+            System.out.println("Error loading view " + viewName + ": " + e.getMessage());
             e.printStackTrace();
         }
     }
@@ -65,12 +65,12 @@ public class MainController {
             stage.hide();
             Main.showLoginPopup(stage);
         } catch (Exception e) {
-            System.out.println("Loi logout: " + e.getMessage());
+            System.out.println("Logout error: " + e.getMessage());
         }
     }
 
     @FXML
     private void openSettings() {
-        System.out.println("TODO: Mo Settings dialog");
+        System.out.println("TODO: Open Settings dialog");
     }
 }

@@ -10,8 +10,8 @@ import javafx.stage.Modality;
 import javafx.stage.Stage;
 
 /**
- * Main.java - Entry point cua ung dung FitTrack.
- * Chay file nay de khoi dong app.
+ * Main.java - Entry point of the FitTrack application.
+ * Run this file to start the app.
  */
 public class Main extends Application {
 
@@ -22,15 +22,16 @@ public class Main extends Application {
     }
 
     /**
-     * Hien cua so Login dang modal (chan window chinh).
-     * Sau khi login thanh cong, LoginController se goi loadMainWindow().
+     * Shows the login window as a modal dialog that blocks the main window.
+     * After a successful login, LoginController calls loadMainWindow().
      */
     public static void showLoginPopup(Stage primaryStage) throws Exception {
         FXMLLoader loader = new FXMLLoader(
                 Main.class.getResource("/com/fittrack/login.fxml"));
         Parent root = loader.load();
 
-        // Truyen primaryStage vao controller de sau khi login xong co the load main window.
+        // Pass the primary stage to the controller so it can load the main
+        // window after login succeeds.
         LoginController loginCtrl = loader.getController();
         loginCtrl.setPrimaryStage(primaryStage);
 
@@ -43,8 +44,8 @@ public class Main extends Application {
     }
 
     /**
-     * Load cua so chinh sau khi login thanh cong.
-     * Duoc goi tu LoginController.
+     * Loads the main window after a successful login.
+     * Called from LoginController.
      */
     public static void loadMainWindow(Stage primaryStage) throws Exception {
         FXMLLoader loader = new FXMLLoader(

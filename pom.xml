@@ -25,7 +25,7 @@
             <version>${javafx.version}</version>
         </dependency>
 
-        <!-- JavaFX FXML (để load file .fxml) -->
+        <!-- JavaFX FXML (used to load .fxml files) -->
         <dependency>
             <groupId>org.openjfx</groupId>
             <artifactId>javafx-fxml</artifactId>
@@ -35,7 +35,7 @@
 
     <build>
         <plugins>
-            <!-- Plugin để chạy JavaFX app bằng mvn javafx:run -->
+            <!-- Plugin for running the JavaFX app with mvn javafx:run -->
             <plugin>
                 <groupId>org.openjfx</groupId>
                 <artifactId>javafx-maven-plugin</artifactId>

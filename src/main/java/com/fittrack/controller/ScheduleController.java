@@ -27,9 +27,13 @@ public class ScheduleController {
     @FXML
     private TableColumn<Reminder, String> timeColumn;
     @FXML
+    private TableColumn<Reminder, String> noteColumn;
+    @FXML
     private TextField reminderLabelField;
     @FXML
     private TextField reminderTimeField;
+    @FXML
+    private TextField reminderNoteField;
     @FXML
     private ComboBox<String> reminderTypeComboBox;
     @FXML
@@ -46,6 +50,9 @@ public class ScheduleController {
                 cell -> new javafx.beans.property.SimpleStringProperty(cell.getValue().getLabel()));
         timeColumn.setCellValueFactory(cell -> new javafx.beans.property.SimpleStringProperty(
                 cell.getValue().getScheduledTime().format(FORMATTER)));
+        noteColumn.setCellValueFactory(cell -> new javafx.beans.property.SimpleStringProperty(
+                cell.getValue().getNote() == null ? "-" : cell.getValue().getNote()));
+        reminderTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
         reminderTable.setItems(reminderList);
 
         reminderTypeComboBox.getItems().addAll("Specific Date & Time", "Repeat (Inactivity)");
@@ -76,8 +83,9 @@ public class ScheduleController {
 
         String label = reminderLabelField.getText().trim();
         String inputText = reminderTimeField.getText().trim();
+        String note = reminderNoteField.getText().trim();
         if (label.isEmpty() || inputText.isEmpty()) {
-            showAlert("Vui long nhap day du label va thoi gian/so ngay!");
+            showAlert("Please enter both the label and the time/day value.");
             return;
         }
 
@@ -85,26 +93,27 @@ public class ScheduleController {
             try {
                 int days = Integer.parseInt(inputText);
                 if (days <= 0) {
-                    showAlert("So ngay phai lon hon 0!");
+                    showAlert("The number of days must be greater than 0.");
                     return;
                 }
-                service.scheduleReminder(label, LocalDateTime.now().plusDays(days), days);
+                service.scheduleReminder(label, LocalDateTime.now().plusDays(days), days, note);
             } catch (NumberFormatException e) {
-                showAlert("So ngay phai la so nguyen!");
+                showAlert("The number of days must be a whole number.");
                 return;
             }
         } else {
             try {
                 LocalDateTime time = LocalDateTime.parse(inputText, FORMATTER);
-                service.scheduleReminder(label, time, null);
+                service.scheduleReminder(label, time, null, note);
             } catch (DateTimeParseException e) {
-                showAlert("Sai dinh dang thoi gian. Dung yyyy-MM-dd HH:mm");
+                showAlert("Invalid time format. Use yyyy-MM-dd HH:mm.");
                 return;
             }
         }
 
         reminderLabelField.clear();
         reminderTimeField.clear();
+        reminderNoteField.clear();
         refreshReminderList();
     }
 
@@ -117,12 +126,12 @@ public class ScheduleController {
 
         Reminder next = service.getNextReminder();
         if (next == null) {
-            showAlert("Khong co reminder nao!");
+            showAlert("There are no reminders.");
             return;
         }
 
         Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
-        confirm.setHeaderText("Xoa reminder tiep theo?");
+        confirm.setHeaderText("Remove the next reminder?");
         confirm.setContentText(next.toString());
         confirm.showAndWait().ifPresent(result -> {
             if (result == ButtonType.OK) {

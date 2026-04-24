@@ -42,4 +42,9 @@ public class EnduranceSetRecord extends SetRecord {
     public double getWorkloadScore() {
         return durationMinutes * heartRate;
     }
+
+    @Override
+    public SetRecord copy() {
+        return new EnduranceSetRecord(durationMinutes, heartRate);
+    }
 }

@@ -31,7 +31,7 @@ public class LoginController {
                 loginStage.close();
                 Main.loadMainWindow(primaryStage);
             } catch (Exception e) {
-                System.out.println("Loi khi load main window: " + e.getMessage());
+                System.out.println("Error loading main window: " + e.getMessage());
             }
             return;
         }
