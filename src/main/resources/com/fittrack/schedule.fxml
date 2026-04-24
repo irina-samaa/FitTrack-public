@@ -14,31 +14,35 @@
            style="-fx-text-fill: #00E5FF; -fx-font-size: 14;" />
 
     <VBox styleClass="card" spacing="8" VBox.vgrow="ALWAYS">
-        <Label text="UPCOMING REMINDERS" styleClass="card-title-accent" />
+        <Label text="PRIORITY REMINDERS" styleClass="card-title-accent" />
 
         <TableView fx:id="reminderTable"
                    styleClass="dark-table"
                    VBox.vgrow="ALWAYS">
             <columns>
-                <TableColumn fx:id="labelColumn" text="Reminder" minWidth="200" />
-                <TableColumn fx:id="timeColumn" text="Scheduled Time" minWidth="200" />
-                <TableColumn fx:id="noteColumn" text="Note" minWidth="220" />
+                <TableColumn fx:id="labelColumn" text="Title" minWidth="200" />
+                <TableColumn fx:id="timeColumn" text="Message" minWidth="280" />
+                <TableColumn fx:id="noteColumn" text="Type" minWidth="180" />
             </columns>
             <placeholder>
-                <Label text="No reminders yet. Add one below!"
+                <Label text="No active reminders yet."
                        style="-fx-text-fill: #666;" />
             </placeholder>
         </TableView>
 
         <HBox alignment="CENTER_RIGHT">
-            <Button text="Remove Next Reminder"
+            <Button text="Remove Selected"
                     styleClass="danger-button"
-                    onAction="#removeNextReminder" />
+                    onAction="#removeSelectedReminder" />
         </HBox>
     </VBox>
 
     <VBox styleClass="card" spacing="10">
-        <Label text="ADD REMINDER" styleClass="card-title-accent" />
+        <Label text="ADD MANUAL REMINDER" styleClass="card-title-accent" />
+
+        <Label text="Body part inactivity reminders are automatic after 5 days without a logged session for that body part."
+               styleClass="card-subtitle"
+               wrapText="true" />
 
         <FlowPane hgap="12" vgap="12" prefWrapLength="1020">
             <VBox spacing="4" minWidth="220" prefWidth="260">
@@ -49,12 +53,7 @@
             </VBox>
 
             <VBox spacing="4" minWidth="220" prefWidth="260">
-                <Label text="TYPE" styleClass="field-label" />
-                <ComboBox fx:id="reminderTypeComboBox" styleClass="dark-combo" maxWidth="Infinity" />
-            </VBox>
-
-            <VBox spacing="4" minWidth="220" prefWidth="260">
-                <Label fx:id="reminderInputLabel" text="DATE &amp; TIME" styleClass="field-label" />
+                <Label text="DATE &amp; TIME" styleClass="field-label" />
                 <TextField fx:id="reminderTimeField"
                            promptText="yyyy-MM-dd HH:mm"
                            styleClass="dark-input" />

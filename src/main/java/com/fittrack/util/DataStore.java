@@ -25,6 +25,7 @@ public class DataStore {
         registeredUser.seedWeightHistory(List.of(68.0, 69.0, 70.0, 70.5, 71.0, 70.0, 69.5));
         seedBodyParts();
         seedSessions();
+        seedBodyPartReminderDemo();
         seedReminders();
     }
 
@@ -57,6 +58,7 @@ public class DataStore {
 
     public void addBodyPart(BodyPart bodyPart) {
         bodyParts.add(bodyPart);
+        reminderService.ensureBodyPartTracking(registeredUser, bodyPart.getName());
     }
 
     public ArrayList<WorkoutSession> getSessions() {
@@ -88,26 +90,50 @@ public class DataStore {
         back.createExercise("Deadlift", ExerciseType.STRENGTH).addSet(5, 100);
         back.createExercise("Rowing Machine", ExerciseType.ENDURANCE).addSet(18, 145);
 
-        bodyParts.add(chest);
-        bodyParts.add(legs);
-        bodyParts.add(back);
+        addBodyPart(chest);
+        addBodyPart(legs);
+        addBodyPart(back);
     }
 
     private void seedSessions() {
-        WorkoutSession session = new WorkoutSession(LocalDate.now().minusDays(1), "Upper Body Session");
-        for (BodyPart bodyPart : bodyParts) {
-            if ("Chest".equals(bodyPart.getName()) || "Back".equals(bodyPart.getName())) {
-                for (var exercise : bodyPart.getExercises()) {
-                    session.addExercise(exercise.copy());
-                }
+        WorkoutSession chestSession = new WorkoutSession(LocalDate.now().minusDays(2), "Chest Technique Day");
+        BodyPart chest = findBodyPart("Chest");
+        if (chest != null) {
+            for (var exercise : chest.getExercises()) {
+                chestSession.addExercise(exercise.copy());
             }
         }
-        sessions.add(session);
-        registeredUser.addWorkoutSession(session);
+        sessions.add(chestSession);
+        registeredUser.addWorkoutSession(chestSession);
+
+        WorkoutSession legsSession = new WorkoutSession(LocalDate.now().minusDays(6), "Leg Day Demo");
+        BodyPart legs = findBodyPart("Legs");
+        if (legs != null) {
+            for (var exercise : legs.getExercises()) {
+                legsSession.addExercise(exercise.copy());
+            }
+        }
+        sessions.add(legsSession);
+        registeredUser.addWorkoutSession(legsSession);
+    }
+
+    private void seedBodyPartReminderDemo() {
+        reminderService.seedBodyPartTracking(registeredUser, "Chest", LocalDate.now().minusDays(5));
+        reminderService.seedBodyPartTracking(registeredUser, "Legs", LocalDate.now().minusDays(8));
+        reminderService.seedBodyPartTracking(registeredUser, "Back", LocalDate.now().minusDays(7));
     }
 
     private void seedReminders() {
-        reminderService.scheduleReminder(registeredUser, "Chest Day", LocalDateTime.now().plusDays(1), null, "Push focus + warm up shoulders");
-        reminderService.scheduleReminder(registeredUser, "Leg Day", LocalDateTime.now().plusDays(3), null, null);
+        reminderService.scheduleReminder(registeredUser, "Hydration Check", LocalDateTime.now().plusHours(12), "Aim for 2.5L today");
+        reminderService.scheduleReminder(registeredUser, "Sunday Stretch", LocalDateTime.now().plusDays(2), "10-minute mobility session");
+    }
+
+    private BodyPart findBodyPart(String name) {
+        for (BodyPart bodyPart : bodyParts) {
+            if (bodyPart.getName().equalsIgnoreCase(name)) {
+                return bodyPart;
+            }
+        }
+        return null;
     }
 }

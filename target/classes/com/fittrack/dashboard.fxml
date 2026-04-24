@@ -20,7 +20,7 @@
 
         <HBox spacing="20" fillHeight="true">
             <VBox styleClass="card" spacing="8" maxWidth="Infinity" prefWidth="0" HBox.hgrow="ALWAYS">
-                <Label text="TODAY'S WORKOUT" styleClass="card-title-accent" />
+                <Label text="WORKOUT" styleClass="card-title-accent" />
                 <Label fx:id="sessionCountLabel" styleClass="card-big-number" />
                 <Label fx:id="lastSessionLabel" styleClass="card-subtitle" wrapText="true" />
             </VBox>

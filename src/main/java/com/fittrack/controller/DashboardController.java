@@ -1,8 +1,8 @@
 package com.fittrack.controller;
 
-import com.fittrack.model.Reminder;
 import com.fittrack.model.WorkoutSession;
 import com.fittrack.model.Exercise;
+import com.fittrack.model.ReminderDisplayItem;
 import com.fittrack.model.SetRecord;
 import com.fittrack.service.FitnessTrackerService;
 import javafx.animation.KeyFrame;
@@ -26,7 +26,6 @@ import java.util.Set;
 import java.util.TreeSet;
 
 public class DashboardController {
-    private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("EEEE, MMM d, yyyy");
     private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm:ss");
     private static final DateTimeFormatter SHORT_DATE_FORMATTER = DateTimeFormatter.ofPattern("MMM d");
@@ -132,8 +131,8 @@ public class DashboardController {
             return;
         }
 
-        Reminder next = service.getNextReminder();
-        int reminderCount = service.getAllReminders().size();
+        ReminderDisplayItem next = service.getNextReminderDisplayItem();
+        int reminderCount = service.getReminderDisplayItems().size();
         upcomingCountLabel.setText(reminderCount + " upcoming reminder" + (reminderCount == 1 ? "" : "s"));
 
         if (next == null) {
@@ -142,8 +141,8 @@ public class DashboardController {
             return;
         }
 
-        reminderTitleLabel.setText(next.getLabel());
-        reminderTimeLabel.setText(next.getScheduledTime().format(FORMATTER));
+        reminderTitleLabel.setText(next.getTitle());
+        reminderTimeLabel.setText(next.getMessage());
     }
 
     private void loadMotivationQuote() {

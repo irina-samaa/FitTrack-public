@@ -6,6 +6,7 @@ import com.fittrack.model.ExerciseType;
 import com.fittrack.model.HealthMetrics;
 import com.fittrack.model.ProgressTracker;
 import com.fittrack.model.Reminder;
+import com.fittrack.model.ReminderDisplayItem;
 import com.fittrack.model.SetRecord;
 import com.fittrack.model.User;
 import com.fittrack.model.WorkoutSession;
@@ -49,6 +50,7 @@ public class FitnessTrackerService {
     }
 
     public BodyPart createBodyPart(String name) {
+        requireCurrentUser();
         BodyPart bodyPart = new BodyPart(name);
         dataStore.addBodyPart(bodyPart);
         return bodyPart;
@@ -83,7 +85,7 @@ public class FitnessTrackerService {
     }
 
     public WorkoutSession startWorkoutSession(String sessionName) {
-        User currentUser = requireCurrentUser();
+        requireCurrentUser();
         String resolvedSessionName = (sessionName == null || sessionName.isBlank())
             ? "Workout - " + LocalDate.now()
             : sessionName.trim();
@@ -104,10 +106,7 @@ public class FitnessTrackerService {
         for (Exercise exercise : exercisesToClear) {
             exercise.clearSets();
         }
-        
-        // Reset repeating reminders since a workout was completed
-        dataStore.getReminderService().resetRepeatingReminders(currentUser);
-        
+
         return session;
     }
 
@@ -150,24 +149,27 @@ public class FitnessTrackerService {
         return progressTracker.getLabels(requireCurrentUser());
     }
 
-    public void scheduleReminder(String label, LocalDateTime time, Integer repeatIntervalDays) {
-        scheduleReminder(label, time, repeatIntervalDays, null);
+    public void scheduleReminder(String label, LocalDateTime time) {
+        scheduleReminder(label, time, null);
     }
 
-    public void scheduleReminder(String label, LocalDateTime time, Integer repeatIntervalDays, String note) {
-        dataStore.getReminderService().scheduleReminder(requireCurrentUser(), label, time, repeatIntervalDays, note);
+    public void scheduleReminder(String label, LocalDateTime time, String note) {
+        dataStore.getReminderService().scheduleReminder(requireCurrentUser(), label, time, note);
     }
 
-    public Reminder getNextReminder() {
-        return dataStore.getReminderService().getNextReminder(requireCurrentUser());
+    public ArrayList<ReminderDisplayItem> getReminderDisplayItems() {
+        return dataStore.getReminderService().getDisplayItems(requireCurrentUser());
     }
 
-    public Reminder removeNextReminder() {
-        return dataStore.getReminderService().removeNextReminder(requireCurrentUser());
+    public ReminderDisplayItem getNextReminderDisplayItem() {
+        return dataStore.getReminderService().getNextDisplayItem(requireCurrentUser());
     }
 
-    public ArrayList<Reminder> getAllReminders() {
-        return dataStore.getReminderService().getAllReminders(requireCurrentUser());
+    public boolean removeReminderDisplayItem(ReminderDisplayItem item) {
+        if (item instanceof Reminder reminder) {
+            return dataStore.getReminderService().removeReminder(requireCurrentUser(), reminder);
+        }
+        return false;
     }
 
 

@@ -1,13 +1,13 @@
 package com.fittrack.controller;
 
-import com.fittrack.model.Reminder;
+import com.fittrack.model.BodyPartInactivityAlert;
+import com.fittrack.model.ReminderDisplayItem;
 import com.fittrack.service.FitnessTrackerService;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
-import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
@@ -21,13 +21,13 @@ public class ScheduleController {
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 
     @FXML
-    private TableView<Reminder> reminderTable;
+    private TableView<ReminderDisplayItem> reminderTable;
     @FXML
-    private TableColumn<Reminder, String> labelColumn;
+    private TableColumn<ReminderDisplayItem, String> labelColumn;
     @FXML
-    private TableColumn<Reminder, String> timeColumn;
+    private TableColumn<ReminderDisplayItem, String> timeColumn;
     @FXML
-    private TableColumn<Reminder, String> noteColumn;
+    private TableColumn<ReminderDisplayItem, String> noteColumn;
     @FXML
     private TextField reminderLabelField;
     @FXML
@@ -35,43 +35,22 @@ public class ScheduleController {
     @FXML
     private TextField reminderNoteField;
     @FXML
-    private ComboBox<String> reminderTypeComboBox;
-    @FXML
-    private Label reminderInputLabel;
-    @FXML
     private Label nextReminderLabel;
 
     private final FitnessTrackerService service = FitnessTrackerService.getInstance();
-    private final ObservableList<Reminder> reminderList = FXCollections.observableArrayList();
+    private final ObservableList<ReminderDisplayItem> reminderList = FXCollections.observableArrayList();
 
     @FXML
     private void initialize() {
         labelColumn.setCellValueFactory(
-                cell -> new javafx.beans.property.SimpleStringProperty(cell.getValue().getLabel()));
+                cell -> new javafx.beans.property.SimpleStringProperty(cell.getValue().getTitle()));
         timeColumn.setCellValueFactory(cell -> new javafx.beans.property.SimpleStringProperty(
-                cell.getValue().getScheduledTime().format(FORMATTER)));
+                cell.getValue().getMessage()));
         noteColumn.setCellValueFactory(cell -> new javafx.beans.property.SimpleStringProperty(
-                cell.getValue().getNote() == null ? "-" : cell.getValue().getNote()));
+                formatType(cell.getValue())));
         reminderTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
         reminderTable.setItems(reminderList);
-
-        reminderTypeComboBox.getItems().addAll("Specific Date & Time", "Repeat (Inactivity)");
-        reminderTypeComboBox.setValue("Specific Date & Time");
-        reminderTypeComboBox.setOnAction(e -> updateReminderInputMode());
-
         refreshReminderList();
-    }
-
-    private void updateReminderInputMode() {
-        if ("Repeat (Inactivity)".equals(reminderTypeComboBox.getValue())) {
-            reminderInputLabel.setText("REPEAT EVERY (DAYS)");
-            reminderTimeField.setPromptText("e.g. 3");
-            reminderTimeField.clear();
-        } else {
-            reminderInputLabel.setText("DATE & TIME");
-            reminderTimeField.setPromptText("yyyy-MM-dd HH:mm");
-            reminderTimeField.clear();
-        }
     }
 
     @FXML
@@ -85,30 +64,15 @@ public class ScheduleController {
         String inputText = reminderTimeField.getText().trim();
         String note = reminderNoteField.getText().trim();
         if (label.isEmpty() || inputText.isEmpty()) {
-            showAlert("Please enter both the label and the time/day value.");
+            showAlert("Please enter both the label and the date/time.");
             return;
         }
-
-        if ("Repeat (Inactivity)".equals(reminderTypeComboBox.getValue())) {
-            try {
-                int days = Integer.parseInt(inputText);
-                if (days <= 0) {
-                    showAlert("The number of days must be greater than 0.");
-                    return;
-                }
-                service.scheduleReminder(label, LocalDateTime.now().plusDays(days), days, note);
-            } catch (NumberFormatException e) {
-                showAlert("The number of days must be a whole number.");
-                return;
-            }
-        } else {
-            try {
-                LocalDateTime time = LocalDateTime.parse(inputText, FORMATTER);
-                service.scheduleReminder(label, time, null, note);
-            } catch (DateTimeParseException e) {
-                showAlert("Invalid time format. Use yyyy-MM-dd HH:mm.");
-                return;
-            }
+        try {
+            LocalDateTime time = LocalDateTime.parse(inputText, FORMATTER);
+            service.scheduleReminder(label, time, note);
+        } catch (DateTimeParseException e) {
+            showAlert("Invalid time format. Use yyyy-MM-dd HH:mm.");
+            return;
         }
 
         reminderLabelField.clear();
@@ -118,24 +82,28 @@ public class ScheduleController {
     }
 
     @FXML
-    private void removeNextReminder() {
+    private void removeSelectedReminder() {
         if (service.getCurrentUser() == null) {
-            showAlert("Please log in before removing reminders.");
+            showAlert("Please log in before removing reminder items.");
             return;
         }
 
-        Reminder next = service.getNextReminder();
-        if (next == null) {
-            showAlert("There are no reminders.");
+        ReminderDisplayItem selectedItem = reminderTable.getSelectionModel().getSelectedItem();
+        if (selectedItem == null) {
+            showAlert("Select a reminder item first.");
+            return;
+        }
+        if (selectedItem instanceof BodyPartInactivityAlert) {
+            showAlert("Body part inactivity reminders are automatic. Log that body part in a workout to clear it.");
             return;
         }
 
         Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
-        confirm.setHeaderText("Remove the next reminder?");
-        confirm.setContentText(next.toString());
+        confirm.setHeaderText("Remove the selected reminder item?");
+        confirm.setContentText(selectedItem.getTitle() + "\n" + selectedItem.getMessage());
         confirm.showAndWait().ifPresent(result -> {
             if (result == ButtonType.OK) {
-                service.removeNextReminder();
+                service.removeReminderDisplayItem(selectedItem);
                 refreshReminderList();
             }
         });
@@ -148,13 +116,17 @@ public class ScheduleController {
             return;
         }
 
-        reminderList.setAll(service.getAllReminders());
-        Reminder next = service.getNextReminder();
+        reminderList.setAll(service.getReminderDisplayItems());
+        ReminderDisplayItem next = service.getNextReminderDisplayItem();
         if (next == null) {
             nextReminderLabel.setText("No upcoming reminders");
             return;
         }
-        nextReminderLabel.setText("Next: " + next.getLabel() + " - " + next.getScheduledTime().format(FORMATTER));
+        nextReminderLabel.setText("Up next: " + next.getTitle() + " - " + next.getMessage());
+    }
+
+    private String formatType(ReminderDisplayItem item) {
+        return item instanceof BodyPartInactivityAlert ? "Body Part Inactivity" : "User Defined";
     }
 
     private void showAlert(String message) {
