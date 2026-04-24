@@ -2,11 +2,6 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
-<!--
-  workout.fxml — Màn hình quản lý bài tập, layout 3 cột.
-  Controller: WorkoutController.java
-  Luồng: BodyPart → Exercise → Sets
--->
 <VBox xmlns:fx="http://javafx.com/fxml"
       fx:controller="com.fittrack.controller.WorkoutController"
       spacing="16"
@@ -14,121 +9,89 @@
 
     <Label text="Workout Builder" styleClass="screen-title" />
 
-    <!-- Nút Start Session nằm trên cùng -->
     <HBox alignment="CENTER_RIGHT">
-        <!--
-          GỌI BACKEND: WorkoutSession constructor + DataStore.addSession()
-          + WorkoutSession.getSummary()
-        -->
-        <Button text="▶ Start Workout Session"
+        <Button text="Start Workout Session"
                 styleClass="primary-button"
                 onAction="#startWorkoutSession" />
     </HBox>
 
-    <!-- ===== 3 COLUMNS ===== -->
     <HBox spacing="12" VBox.vgrow="ALWAYS">
-
-        <!-- COLT 1: Body Parts -->
         <VBox styleClass="card" spacing="8" HBox.hgrow="ALWAYS">
             <Label text="BODY PARTS" styleClass="card-title-accent" />
-
-            <!--
-              ListView hiện BodyPart names.
-              GỌI BACKEND: DataStore.getBodyParts() → BodyPart.getName()
-              (Binding trong WorkoutController.loadBodyParts())
-            -->
             <ListView fx:id="bodyPartListView"
                       styleClass="dark-list"
                       VBox.vgrow="ALWAYS" />
-
-            <!-- Form thêm BodyPart mới -->
             <HBox spacing="6">
                 <TextField fx:id="newBodyPartField"
                            promptText="Body part name..."
                            styleClass="dark-input"
                            HBox.hgrow="ALWAYS" />
-                <!--
-                  GỌI BACKEND: new BodyPart(name) + DataStore.addBodyPart()
-                -->
-                <Button text="+" styleClass="accent-button"
+                <Button text="+"
+                        styleClass="accent-button"
                         onAction="#addBodyPart" />
             </HBox>
         </VBox>
 
-        <!-- COLT 2: Exercises -->
         <VBox styleClass="card" spacing="8" HBox.hgrow="ALWAYS">
             <Label fx:id="selectedBodyPartLabel"
                    text="EXERCISES"
                    styleClass="card-title-accent" />
-
-            <!--
-              ListView hiện Exercise names của BodyPart đang chọn.
-              GỌI BACKEND: BodyPart.getExercises() → Exercise.getName()
-            -->
             <ListView fx:id="exerciseListView"
                       styleClass="dark-list"
                       VBox.vgrow="ALWAYS" />
-
-            <!-- Form thêm Exercise mới -->
             <HBox spacing="6">
                 <TextField fx:id="newExerciseField"
                            promptText="Exercise name..."
                            styleClass="dark-input"
                            HBox.hgrow="ALWAYS" />
-                <!--
-                  GỌI BACKEND: new Exercise(name) + BodyPart.addExercise()
-                  + BodyPart.sortExercises() [Insertion Sort]
-                -->
-                <Button text="+" styleClass="accent-button"
+                <ComboBox fx:id="exerciseTypeComboBox"
+                          styleClass="dark-combo"
+                          prefWidth="120" />
+                <Button text="+"
+                        styleClass="accent-button"
                         onAction="#addExercise" />
             </HBox>
         </VBox>
 
-        <!-- COLT 3: Sets -->
         <VBox styleClass="card" spacing="8" HBox.hgrow="ALWAYS">
             <Label fx:id="selectedExerciseLabel"
                    text="SETS"
                    styleClass="card-title-accent" />
 
-            <!--
-              TableView hiện ExerciseSet (Reps + Weight).
-              GỌI BACKEND: Exercise.getSets() → ExerciseSet.getReps() / getWeightKg()
-            -->
             <TableView fx:id="setTableView"
                        styleClass="dark-table"
                        VBox.vgrow="ALWAYS">
                 <columns>
-                    <TableColumn fx:id="repsColumn" text="Reps" minWidth="80" />
-                    <TableColumn fx:id="weightColumn" text="Weight (kg)" minWidth="100" />
+                    <TableColumn fx:id="setTypeColumn" text="Type" minWidth="90" />
+                    <TableColumn fx:id="primaryMetricColumn" text="Metric 1" minWidth="110" />
+                    <TableColumn fx:id="secondaryMetricColumn" text="Metric 2" minWidth="120" />
                 </columns>
             </TableView>
 
-            <!-- Tổng Volume -->
-            <!--
-              GỌI BACKEND: Exercise.getTotalVolume()
-            -->
             <Label fx:id="totalVolumeLabel"
-                   text="Total volume: — "
+                   text="Total workload: -"
                    styleClass="subtitle-text"
                    style="-fx-text-fill: #00E5FF;" />
 
-            <!-- Form thêm Set mới -->
-            <HBox spacing="6">
-                <TextField fx:id="newRepsField"
-                           promptText="Reps"
-                           styleClass="dark-input"
-                           prefWidth="70" />
-                <TextField fx:id="newWeightField"
-                           promptText="kg"
-                           styleClass="dark-input"
-                           prefWidth="70" />
-                <!--
-                  GỌI BACKEND: new ExerciseSet(reps, weight) + Exercise.addSet()
-                -->
-                <Button text="+ Set" styleClass="accent-button"
+            <HBox spacing="6" alignment="BOTTOM_LEFT">
+                <VBox spacing="4">
+                    <Label fx:id="firstMetricLabel" text="Metric 1" styleClass="field-label" />
+                    <TextField fx:id="firstMetricField"
+                               promptText="Metric 1"
+                               styleClass="dark-input"
+                               prefWidth="100" />
+                </VBox>
+                <VBox spacing="4">
+                    <Label fx:id="secondMetricLabel" text="Metric 2" styleClass="field-label" />
+                    <TextField fx:id="secondMetricField"
+                               promptText="Metric 2"
+                               styleClass="dark-input"
+                               prefWidth="120" />
+                </VBox>
+                <Button text="+ Set"
+                        styleClass="accent-button"
                         onAction="#addSet" />
             </HBox>
         </VBox>
-
     </HBox>
 </VBox>

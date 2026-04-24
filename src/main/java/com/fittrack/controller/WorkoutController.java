@@ -2,263 +2,217 @@ package com.fittrack.controller;
 
 import com.fittrack.model.BodyPart;
 import com.fittrack.model.Exercise;
-import com.fittrack.model.ExerciseSet;
+import com.fittrack.model.ExerciseType;
+import com.fittrack.model.SetRecord;
 import com.fittrack.model.WorkoutSession;
-import com.fittrack.util.DataStore;
+import com.fittrack.service.FitnessTrackerService;
 import javafx.beans.property.SimpleDoubleProperty;
-import javafx.beans.property.SimpleIntegerProperty;
+import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
-import javafx.scene.control.*;
+import javafx.scene.control.Alert;
+import javafx.scene.control.ComboBox;
+import javafx.scene.control.Label;
+import javafx.scene.control.ListView;
+import javafx.scene.control.TableColumn;
+import javafx.scene.control.TableView;
+import javafx.scene.control.TextField;
 
-import java.time.LocalDate;
-
-/**
- * WorkoutController.java — Màn hình quản lý bài tập.
- * Layout 3 cột: BodyParts → Exercises → Sets
- */
 public class WorkoutController {
-
-    // --- Cột trái: danh sách BodyPart ---
     @FXML private ListView<String> bodyPartListView;
     @FXML private TextField newBodyPartField;
-
-    // --- Cột giữa: danh sách Exercise theo BodyPart đang chọn ---
     @FXML private ListView<String> exerciseListView;
     @FXML private TextField newExerciseField;
-    @FXML private Label selectedBodyPartLabel; // Tiêu đề hiện tên body part đang chọn
+    @FXML private ComboBox<String> exerciseTypeComboBox;
+    @FXML private Label selectedBodyPartLabel;
+    @FXML private TableView<SetRecord> setTableView;
+    @FXML private TableColumn<SetRecord, String> setTypeColumn;
+    @FXML private TableColumn<SetRecord, Number> primaryMetricColumn;
+    @FXML private TableColumn<SetRecord, Number> secondaryMetricColumn;
+    @FXML private TextField firstMetricField;
+    @FXML private TextField secondMetricField;
+    @FXML private Label firstMetricLabel;
+    @FXML private Label secondMetricLabel;
+    @FXML private Label selectedExerciseLabel;
+    @FXML private Label totalVolumeLabel;
 
-    // --- Cột phải: bảng Set của Exercise đang chọn ---
-    @FXML private TableView<ExerciseSet> setTableView;
-    @FXML private TableColumn<ExerciseSet, Number> repsColumn;
-    @FXML private TableColumn<ExerciseSet, Number> weightColumn;
-    @FXML private TextField newRepsField;
-    @FXML private TextField newWeightField;
-    @FXML private Label selectedExerciseLabel;  // Tiêu đề hiện tên exercise đang chọn
-    @FXML private Label totalVolumeLabel;        // Tổng volume (reps × weight)
+    private final FitnessTrackerService service = FitnessTrackerService.getInstance();
+    private final ObservableList<String> bodyPartNames = FXCollections.observableArrayList();
+    private final ObservableList<String> exerciseNames = FXCollections.observableArrayList();
+    private final ObservableList<SetRecord> setItems = FXCollections.observableArrayList();
 
-    // Lưu đối tượng đang được chọn
     private BodyPart selectedBodyPart;
     private Exercise selectedExercise;
 
-    // ObservableList để ListView/TableView tự cập nhật UI
-    private ObservableList<String> bodyPartNames = FXCollections.observableArrayList();
-    private ObservableList<String> exerciseNames = FXCollections.observableArrayList();
-    private ObservableList<ExerciseSet> setItems = FXCollections.observableArrayList();
-
-    /**
-     * Khởi tạo: bind dữ liệu từ DataStore vào các list và table.
-     */
     @FXML
     private void initialize() {
-        // Thiết lập TableView columns
-        // ===== GỌI BACKEND: ExerciseSet.getReps() / getWeightKg() =====
-        repsColumn.setCellValueFactory(cell -> new SimpleIntegerProperty(cell.getValue().getReps()));
-        weightColumn.setCellValueFactory(cell -> new SimpleDoubleProperty(cell.getValue().getWeightKg()));
+        setTypeColumn.setCellValueFactory(cell -> new SimpleStringProperty(cell.getValue().getType()));
+        primaryMetricColumn.setCellValueFactory(cell -> new SimpleDoubleProperty(cell.getValue().getPrimaryMetricValue().doubleValue()));
+        secondaryMetricColumn.setCellValueFactory(cell -> new SimpleDoubleProperty(cell.getValue().getSecondaryMetricValue().doubleValue()));
 
-        // Bind ObservableList vào ListView/TableView
         bodyPartListView.setItems(bodyPartNames);
         exerciseListView.setItems(exerciseNames);
         setTableView.setItems(setItems);
 
-        // Lắng nghe khi user chọn BodyPart
-        bodyPartListView.getSelectionModel().selectedItemProperty().addListener(
-            (obs, oldVal, newVal) -> onBodyPartSelected(newVal)
+        exerciseTypeComboBox.getItems().addAll(
+            ExerciseType.STRENGTH.getDisplayName(),
+            ExerciseType.CARDIO.getDisplayName(),
+            ExerciseType.ENDURANCE.getDisplayName()
         );
+        exerciseTypeComboBox.setValue(ExerciseType.STRENGTH.getDisplayName());
+        exerciseTypeComboBox.setOnAction(event -> updateMetricInputs(ExerciseType.fromDisplayName(exerciseTypeComboBox.getValue())));
 
-        // Lắng nghe khi user chọn Exercise
-        exerciseListView.getSelectionModel().selectedItemProperty().addListener(
-            (obs, oldVal, newVal) -> onExerciseSelected(newVal)
-        );
+        bodyPartListView.getSelectionModel().selectedItemProperty().addListener((obs, oldValue, newValue) -> onBodyPartSelected(newValue));
+        exerciseListView.getSelectionModel().selectedItemProperty().addListener((obs, oldValue, newValue) -> onExerciseSelected(newValue));
 
-        // Load danh sách BodyPart ban đầu
+        updateMetricInputs(ExerciseType.STRENGTH);
         loadBodyParts();
     }
 
-    /**
-     * Load tất cả BodyPart từ DataStore vào cột trái.
-     */
     private void loadBodyParts() {
         bodyPartNames.clear();
-        // ===== GỌI BACKEND: DataStore.getBodyParts() =====
-        for (BodyPart bp : DataStore.getInstance().getBodyParts()) {
-            // ===== GỌI BACKEND: BodyPart.getName() =====
-            bodyPartNames.add(bp.getName());
+        for (BodyPart bodyPart : service.getBodyParts()) {
+            bodyPartNames.add(bodyPart.getName());
         }
     }
 
-    /**
-     * Khi user chọn một BodyPart, load danh sách Exercise của nó vào cột giữa.
-     */
     private void onBodyPartSelected(String bodyPartName) {
         exerciseNames.clear();
         setItems.clear();
-        selectedBodyPart = null;
         selectedExercise = null;
+        selectedBodyPart = null;
 
-        if (bodyPartName == null) return;
-
-        // Tìm BodyPart object tương ứng
-        for (BodyPart bp : DataStore.getInstance().getBodyParts()) {
-            if (bp.getName().equals(bodyPartName)) {
-                selectedBodyPart = bp;
-                break;
-            }
+        if (bodyPartName == null) {
+            return;
         }
 
-        if (selectedBodyPart == null) return;
+        selectedBodyPart = service.findBodyPart(bodyPartName);
+        if (selectedBodyPart == null) {
+            return;
+        }
 
-        selectedBodyPartLabel.setText("Exercises — " + bodyPartName);
-
-        // ===== GỌI BACKEND: BodyPart.getExercises() =====
-        for (Exercise ex : selectedBodyPart.getExercises()) {
-            // ===== GỌI BACKEND: Exercise.getName() =====
-            exerciseNames.add(ex.getName());
+        selectedBodyPartLabel.setText("Exercises - " + bodyPartName);
+        for (Exercise exercise : selectedBodyPart.getExercises()) {
+            exerciseNames.add(buildExerciseDisplayName(exercise));
         }
     }
 
-    /**
-     * Khi user chọn một Exercise, load danh sách Set vào cột phải.
-     */
-    private void onExerciseSelected(String exerciseName) {
+    private void onExerciseSelected(String exerciseDisplayName) {
         setItems.clear();
         selectedExercise = null;
 
-        if (exerciseName == null || selectedBodyPart == null) return;
+        if (exerciseDisplayName == null || selectedBodyPart == null) {
+            return;
+        }
 
-        // ===== GỌI BACKEND: BodyPart.findExercise(name) — Linear Search =====
-        selectedExercise = selectedBodyPart.findExercise(exerciseName);
+        String exerciseName = extractExerciseName(exerciseDisplayName);
+        selectedExercise = service.findExercise(selectedBodyPart.getName(), exerciseName);
+        if (selectedExercise == null) {
+            return;
+        }
 
-        if (selectedExercise == null) return;
-
-        selectedExerciseLabel.setText("Sets — " + exerciseName);
-
-        // ===== GỌI BACKEND: Exercise.getSets() =====
-        setItems.addAll(selectedExercise.getSets());
-
-        // ===== GỌI BACKEND: Exercise.getTotalVolume() =====
-        totalVolumeLabel.setText("Total volume: " + selectedExercise.getTotalVolume() + " kg·reps");
+        selectedExerciseLabel.setText("Sets - " + exerciseName + " [" + selectedExercise.getExerciseType().getDisplayName() + "]");
+        setItems.setAll(selectedExercise.getSets());
+        updateMetricInputs(selectedExercise.getExerciseType());
+        totalVolumeLabel.setText(String.format("Total workload: %.2f", selectedExercise.getTotalVolume()));
     }
 
-    /**
-     * Nút "+ Add Body Part": thêm BodyPart mới vào DataStore.
-     */
     @FXML
     private void addBodyPart() {
         String name = newBodyPartField.getText().trim();
         if (name.isEmpty()) {
-            showAlert("Nhập tên body part!");
+            showAlert("Nhap ten body part!");
             return;
         }
 
-        // ===== GỌI BACKEND: new BodyPart(name) — TODO: backend team tạo constructor =====
-        BodyPart newBP = new BodyPart(name);
-
-        // ===== GỌI BACKEND: DataStore.addBodyPart(bodyPart) =====
-        DataStore.getInstance().addBodyPart(newBP);
-
+        service.createBodyPart(name);
         newBodyPartField.clear();
-        loadBodyParts(); // Refresh list
-        System.out.println("Đã thêm BodyPart: " + name);
+        loadBodyParts();
     }
 
-    /**
-     * Nút "+ Add Exercise": thêm Exercise vào BodyPart đang chọn.
-     */
     @FXML
     private void addExercise() {
         if (selectedBodyPart == null) {
-            showAlert("Chọn một Body Part trước!");
+            showAlert("Chon mot Body Part truoc!");
             return;
         }
 
         String name = newExerciseField.getText().trim();
         if (name.isEmpty()) {
-            showAlert("Nhập tên exercise!");
+            showAlert("Nhap ten exercise!");
             return;
         }
 
-        // ===== GỌI BACKEND: new Exercise(name) — TODO: backend team tạo constructor =====
-        Exercise newEx = new Exercise(name);
-
-        // ===== GỌI BACKEND: BodyPart.addExercise(exercise) =====
-        selectedBodyPart.addExercise(newEx);
-
-        // ===== GỌI BACKEND: BodyPart.sortExercises() — Insertion Sort by name =====
-        selectedBodyPart.sortExercises();
-
+        ExerciseType type = ExerciseType.fromDisplayName(exerciseTypeComboBox.getValue());
+        service.createExercise(selectedBodyPart.getName(), name, type);
         newExerciseField.clear();
-        onBodyPartSelected(selectedBodyPart.getName()); // Refresh exercise list
-        System.out.println("Đã thêm Exercise: " + name);
+        onBodyPartSelected(selectedBodyPart.getName());
     }
 
-    /**
-     * Nút "+ Add Set": thêm Set vào Exercise đang chọn.
-     */
     @FXML
     private void addSet() {
-        if (selectedExercise == null) {
-            showAlert("Chọn một Exercise trước!");
+        if (selectedExercise == null || selectedBodyPart == null) {
+            showAlert("Chon mot Exercise truoc!");
             return;
         }
 
         try {
-            int reps = Integer.parseInt(newRepsField.getText().trim());
-            double weight = Double.parseDouble(newWeightField.getText().trim());
+            int firstMetric = Integer.parseInt(firstMetricField.getText().trim());
+            double secondMetric = Double.parseDouble(secondMetricField.getText().trim());
 
-            // ===== GỌI BACKEND: new ExerciseSet(reps, weight) — TODO: backend team =====
-            ExerciseSet newSet = new ExerciseSet(reps, weight);
-
-            // ===== GỌI BACKEND: Exercise.addSet(exerciseSet) =====
-            selectedExercise.addSet(newSet);
-
-            // Refresh TableView
-            setItems.add(newSet);
-
-            // ===== GỌI BACKEND: Exercise.getTotalVolume() =====
-            totalVolumeLabel.setText("Total volume: " + selectedExercise.getTotalVolume() + " kg·reps");
-
-            newRepsField.clear();
-            newWeightField.clear();
-            System.out.println("Đã thêm Set: " + reps + " reps x " + weight + "kg");
-
+            service.addSet(selectedBodyPart.getName(), selectedExercise.getName(), firstMetric, secondMetric);
+            setItems.setAll(selectedExercise.getSets());
+            totalVolumeLabel.setText(String.format("Total workload: %.2f", selectedExercise.getTotalVolume()));
+            firstMetricField.clear();
+            secondMetricField.clear();
         } catch (NumberFormatException e) {
-            showAlert("Reps phải là số nguyên, Weight phải là số thực!");
+            showAlert("Metric 1 phai la so nguyen, Metric 2 phai la so!");
         }
     }
 
-    /**
-     * Nút "Start Workout Session": tạo session mới từ các BodyPart đã log.
-     */
     @FXML
     private void startWorkoutSession() {
-        String date = LocalDate.now().toString();
-        String sessionName = "Workout — " + date;
-
-        // ===== GỌI BACKEND: new WorkoutSession(date, sessionName) — TODO: backend team =====
-        WorkoutSession session = new WorkoutSession(date, sessionName);
-
-        // Thêm tất cả exercise của tất cả BodyPart vào session
-        for (BodyPart bp : DataStore.getInstance().getBodyParts()) {
-            // ===== GỌI BACKEND: BodyPart.getExercises() =====
-            for (Exercise ex : bp.getExercises()) {
-                // ===== GỌI BACKEND: WorkoutSession.addExercise(exercise) =====
-                session.addExercise(ex);
-            }
-        }
-
-        // ===== GỌI BACKEND: DataStore.addSession(session) =====
-        DataStore.getInstance().addSession(session);
-
-        // ===== GỌI BACKEND: WorkoutSession.getSummary() =====
+        WorkoutSession session = service.startWorkoutSession();
         showAlert("Session logged!\n" + session.getSummary());
-        System.out.println("Session logged: " + sessionName);
     }
 
-    /**
-     * Tiện ích hiện hộp thông báo.
-     */
+    private void updateMetricInputs(ExerciseType type) {
+        switch (type) {
+            case STRENGTH -> {
+                firstMetricLabel.setText("Reps");
+                secondMetricLabel.setText("Weight (kg)");
+                firstMetricField.setPromptText("e.g. 8");
+                secondMetricField.setPromptText("e.g. 60");
+            }
+            case CARDIO -> {
+                firstMetricLabel.setText("Duration (min)");
+                secondMetricLabel.setText("Distance (km)");
+                firstMetricField.setPromptText("e.g. 20");
+                secondMetricField.setPromptText("e.g. 3.5");
+            }
+            case ENDURANCE -> {
+                firstMetricLabel.setText("Duration (min)");
+                secondMetricLabel.setText("Heart Rate");
+                firstMetricField.setPromptText("e.g. 18");
+                secondMetricField.setPromptText("e.g. 145");
+            }
+        }
+        primaryMetricColumn.setText(firstMetricLabel.getText());
+        secondaryMetricColumn.setText(secondMetricLabel.getText());
+        if (selectedExercise == null) {
+            totalVolumeLabel.setText("Total workload: -");
+        }
+    }
+
+    private String buildExerciseDisplayName(Exercise exercise) {
+        return exercise.getName() + " (" + exercise.getExerciseType().getDisplayName() + ")";
+    }
+
+    private String extractExerciseName(String exerciseDisplayName) {
+        return exerciseDisplayName.replaceAll("\\s+\\(.+\\)$", "");
+    }
+
     private void showAlert(String message) {
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
         alert.setHeaderText(null);

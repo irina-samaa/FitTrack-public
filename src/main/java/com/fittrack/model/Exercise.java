@@ -1,32 +1,50 @@
 package com.fittrack.model;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
-/**
- * Exercise.java — STUB cho UI team.
- */
-public class Exercise {
-    private String name;
-    private ArrayList<ExerciseSet> sets = new ArrayList<>();
+public abstract class Exercise {
+    private final String name;
+    private final BodyPart bodyPart;
+    private final List<SetRecord> sets = new ArrayList<>();
 
-    public Exercise(String name) {
-        this.name = name;
+    protected Exercise(String name, BodyPart bodyPart) {
+        if (name == null || name.isBlank()) {
+            throw new IllegalArgumentException("Exercise name cannot be blank.");
+        }
+        this.name = name.trim();
+        this.bodyPart = bodyPart;
     }
 
-    public String getName() { return name; }
-
-    public void addSet(ExerciseSet set) {
-        sets.add(set); // TODO (Backend): implement
+    public String getName() {
+        return name;
     }
 
-    public ArrayList<ExerciseSet> getSets() { return sets; }
+    public BodyPart getBodyPart() {
+        return bodyPart;
+    }
 
-    /** Tổng volume = sum(reps × weight) qua tất cả set */
+    public List<SetRecord> getSets() {
+        return Collections.unmodifiableList(sets);
+    }
+
+    protected void addSetRecord(SetRecord setRecord) {
+        if (setRecord == null) {
+            throw new IllegalArgumentException("Set record cannot be null.");
+        }
+        sets.add(setRecord);
+    }
+
     public double getTotalVolume() {
         double total = 0;
-        for (ExerciseSet s : sets) {
-            total += s.getReps() * s.getWeightKg(); // TODO (Backend): implement
+        for (SetRecord set : sets) {
+            total += set.getWorkloadScore();
         }
         return total;
     }
+
+    public abstract void addSet(int firstMetric, double secondMetric);
+
+    public abstract ExerciseType getExerciseType();
 }

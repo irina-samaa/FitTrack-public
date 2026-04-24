@@ -2,59 +2,52 @@ package com.fittrack.model;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.PriorityQueue;
 
-/**
- * ReminderService.java — STUB cho UI team.
- * Dùng PriorityQueue (min-heap) để luôn lấy reminder sớm nhất trước.
- */
 public class ReminderService {
-    private PriorityQueue<Reminder> reminders = new PriorityQueue<>();
-    private int recoveryDays = 5; // Default
+    private final Map<String, PriorityQueue<Reminder>> remindersByUser = new HashMap<>();
+    private int recoveryDays = 5;
 
-    /**
-     * Thêm reminder mới vào PriorityQueue.
-     * TODO (Backend): implement đầy đủ.
-     */
-    public void scheduleReminder(String label, LocalDateTime time) {
-        Reminder r = new Reminder(label, time);
-        reminders.add(r); // PriorityQueue tự sort theo compareTo()
+    public void scheduleReminder(User user, String label, LocalDateTime time) {
+        remindersFor(user).add(new Reminder(label, time));
     }
 
-    /**
-     * Xem reminder sớm nhất (đầu min-heap) — KHÔNG xóa.
-     * TODO (Backend): implement.
-     */
-    public Reminder getNextReminder() {
-        return reminders.peek(); // peek = xem mà không xóa
+    public void scheduleReminder(User user) {
+        LocalDateTime nextTime = LocalDateTime.now().plusDays(recoveryDays);
+        scheduleReminder(user, "Recovery Reminder", nextTime);
     }
 
-    /**
-     * Xóa và trả về reminder sớm nhất (poll từ min-heap).
-     * TODO (Backend): implement.
-     */
-    public Reminder removeNextReminder() {
-        return reminders.poll(); // poll = xóa và trả về
+    public Reminder getNextReminder(User user) {
+        return remindersFor(user).peek();
     }
 
-    /**
-     * Trả về sorted list copy của toàn bộ reminders.
-     * Dùng để hiển thị trong TableView.
-     * TODO (Backend): implement — cần tạo copy để không xóa khỏi queue gốc.
-     */
-    public ArrayList<Reminder> getAllReminders() {
-        // Tạo PriorityQueue copy để drain mà không ảnh hưởng original
-        PriorityQueue<Reminder> copy = new PriorityQueue<>(reminders);
+    public Reminder removeNextReminder(User user) {
+        return remindersFor(user).poll();
+    }
+
+    public ArrayList<Reminder> getAllReminders(User user) {
+        PriorityQueue<Reminder> copy = new PriorityQueue<>(remindersFor(user));
         ArrayList<Reminder> result = new ArrayList<>();
         while (!copy.isEmpty()) {
-            result.add(copy.poll()); // Poll theo thứ tự min-heap (sớm nhất trước)
+            result.add(copy.poll());
         }
         return result;
     }
 
     public void setRecoveryDays(int days) {
-        this.recoveryDays = days; // TODO (Backend): implement
+        if (days < 0) {
+            throw new IllegalArgumentException("Recovery days cannot be negative.");
+        }
+        recoveryDays = days;
     }
 
-    public int getRecoveryDays() { return recoveryDays; }
+    public int getRecoveryDays() {
+        return recoveryDays;
+    }
+
+    private PriorityQueue<Reminder> remindersFor(User user) {
+        return remindersByUser.computeIfAbsent(user.getUsername(), ignored -> new PriorityQueue<>());
+    }
 }

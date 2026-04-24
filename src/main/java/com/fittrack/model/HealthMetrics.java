@@ -1,56 +1,34 @@
 package com.fittrack.model;
 
-import java.util.ArrayList;
-
-/**
- * HealthMetrics.java — STUB cho UI team.
- * Backend team implement đầy đủ logic calculateBMI, getBMICategory, v.v.
- */
 public class HealthMetrics {
-    private double weightKg;
-    private double heightCm;
-    private ArrayList<Double> weightHistory = new ArrayList<>();
-
-    public HealthMetrics(double weightKg, double heightCm) {
-        this.weightKg = weightKg;
-        this.heightCm = heightCm;
-    }
-
-    /** Cập nhật cân nặng VÀ lưu vào lịch sử */
-    public void updateWeight(double weightKg) {
-        this.weightKg = weightKg;
-        weightHistory.add(weightKg); // TODO (Backend): implement
-    }
-
-    public void updateHeight(double heightCm) {
-        this.heightCm = heightCm; // TODO (Backend): implement
-    }
-
-    public double getWeight() { return weightKg; }
-    public double getHeight() { return heightCm; }
-
-    /** Tính BMI = weight / (height_m)^2 */
-    public double calculateBMI() {
-        // TODO (Backend): implement công thức
+    public double calculateBMI(double weight, double heightCm) {
         double heightM = heightCm / 100.0;
-        return weightKg / (heightM * heightM);
+        if (heightM <= 0) {
+            throw new IllegalArgumentException("Height must be greater than 0.");
+        }
+        return weight / (heightM * heightM);
     }
 
-    /** Trả về "Underweight" / "Normal" / "Overweight" / "Obese" */
-    public String getBMICategory() {
-        // TODO (Backend): implement theo threshold trong vibe doc
-        double bmi = calculateBMI();
-        if (bmi < 18.5) return "Underweight";
-        if (bmi < 25.0) return "Normal";
-        if (bmi < 30.0) return "Overweight";
+    public String getBMICategory(double bmi) {
+        if (bmi < 18.5) {
+            return "Underweight";
+        }
+        if (bmi < 25.0) {
+            return "Normal";
+        }
+        if (bmi < 30.0) {
+            return "Overweight";
+        }
         return "Obese";
     }
 
-    /** Trả về lời khuyên ngắn dựa trên BMI */
-    public String getHealthRecommendation() {
-        // TODO (Backend): implement
-        return "TODO: Backend team thêm lời khuyên theo getBMICategory()";
+    public String getHealthSuggestion(double bmi) {
+        String category = getBMICategory(bmi);
+        return switch (category) {
+            case "Underweight" -> "Increase nutrient-dense calories and prioritize strength training.";
+            case "Normal" -> "Maintain your current routine with consistent sleep, protein, and hydration.";
+            case "Overweight" -> "Add more daily activity and control calorie intake with steady cardio.";
+            default -> "Consult a healthcare professional and build a gradual plan for weight reduction.";
+        };
     }
-
-    public ArrayList<Double> getWeightHistory() { return weightHistory; }
 }

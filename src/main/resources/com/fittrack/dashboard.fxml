@@ -2,57 +2,58 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
-<!--
-  dashboard.fxml — Màn hình Home, hiện 3 card tóm tắt.
-  Controller: DashboardController.java
--->
-<VBox xmlns:fx="http://javafx.com/fxml"
-      fx:controller="com.fittrack.controller.DashboardController"
-      spacing="24"
-      style="-fx-padding: 32; -fx-background-color: #0F0F0F;">
+<ScrollPane xmlns:fx="http://javafx.com/fxml"
+            fx:controller="com.fittrack.controller.DashboardController"
+            fitToWidth="true" style="-fx-background-color: #0F0F0F; -fx-background: #0F0F0F;">
+    <VBox spacing="24" style="-fx-padding: 32; -fx-background-color: #0F0F0F;">
 
-    <!-- Tiêu đề -->
-    <Label text="Dashboard" styleClass="screen-title" />
-    <Label text="Here's your fitness overview for today."
-           styleClass="subtitle-text" />
+        <Label text="Dashboard" styleClass="screen-title" />
+        <Label text="Here's your fitness overview for today."
+               styleClass="subtitle-text" />
 
-    <!-- ===== 3 SUMMARY CARDS (nằm ngang) ===== -->
-    <HBox spacing="20">
+        <HBox spacing="20">
+            <VBox styleClass="card" spacing="8" HBox.hgrow="ALWAYS">
+                <Label text="TODAY'S WORKOUT" styleClass="card-title-accent" />
+                <Label fx:id="sessionCountLabel" styleClass="card-big-number" />
+                <Label fx:id="lastSessionLabel" styleClass="card-subtitle" />
+            </VBox>
 
-        <!-- Card 1: Today's Workout -->
-        <VBox styleClass="card" spacing="8" HBox.hgrow="ALWAYS">
-            <Label text="TODAY'S WORKOUT" styleClass="card-title-accent" />
-            <!-- DashboardController.loadWorkoutCard() bind vào 2 label này -->
-            <!-- GỌI BACKEND: DataStore.getSessions() + WorkoutSession.getSessionName() -->
-            <Label fx:id="sessionCountLabel" styleClass="card-big-number" />
-            <Label fx:id="lastSessionLabel" styleClass="card-subtitle" />
+            <VBox styleClass="card" spacing="8" HBox.hgrow="ALWAYS">
+                <Label text="CURRENT BMI" styleClass="card-title-accent" />
+                <Label fx:id="bmiValueLabel" styleClass="card-big-number" />
+                <Label fx:id="bmiCategoryLabel" styleClass="card-subtitle" />
+            </VBox>
+
+            <VBox styleClass="card" spacing="8" HBox.hgrow="ALWAYS">
+                <Label text="NEXT REMINDER" styleClass="card-title-accent" />
+                <Label fx:id="nextReminderLabel" styleClass="card-subtitle" wrapText="true" />
+            </VBox>
+        </HBox>
+
+        <VBox styleClass="card" spacing="8" style="-fx-background-color: #1a0a00; -fx-border-color: #FF4500;">
+            <Label text="DAILY MOTIVATION" styleClass="card-title-accent" />
+            <Label fx:id="motivationLabel" styleClass="motivation-text" wrapText="true" />
         </VBox>
 
-        <!-- Card 2: Current BMI -->
-        <VBox styleClass="card" spacing="8" HBox.hgrow="ALWAYS">
-            <Label text="CURRENT BMI" styleClass="card-title-accent" />
-            <!-- GỌI BACKEND: HealthMetrics.calculateBMI() + getBMICategory() -->
-            <Label fx:id="bmiValueLabel" styleClass="card-big-number" />
-            <Label fx:id="bmiCategoryLabel" styleClass="card-subtitle" />
+        <HBox spacing="20" VBox.vgrow="ALWAYS">
+            <VBox styleClass="card" spacing="8" HBox.hgrow="ALWAYS">
+                <Label text="EXERCISE WORKLOADS" styleClass="card-title-accent" />
+                <ListView fx:id="exerciseWorkloadsListView" prefHeight="150" 
+                          style="-fx-background-color: transparent; -fx-control-inner-background: #1A1A1A; -fx-text-fill: white;" />
+            </VBox>
+            <VBox styleClass="card" spacing="8" HBox.hgrow="ALWAYS">
+                <Label text="SESSION WORKLOADS" styleClass="card-title-accent" />
+                <ListView fx:id="sessionWorkloadsListView" prefHeight="150" 
+                          style="-fx-background-color: transparent; -fx-control-inner-background: #1A1A1A; -fx-text-fill: white;" />
+            </VBox>
+        </HBox>
+
+        <VBox styleClass="card" spacing="12">
+            <Label text="4 OOP PRINCIPLES IN THIS PROJECT" styleClass="card-title-accent" />
+            <Label fx:id="encapsulationLabel" styleClass="body-text" wrapText="true" />
+            <Label fx:id="inheritanceLabel" styleClass="body-text" wrapText="true" />
+            <Label fx:id="polymorphismLabel" styleClass="body-text" wrapText="true" />
+            <Label fx:id="abstractionLabel" styleClass="body-text" wrapText="true" />
         </VBox>
-
-        <!-- Card 3: Next Reminder -->
-        <VBox styleClass="card" spacing="8" HBox.hgrow="ALWAYS">
-            <Label text="NEXT REMINDER" styleClass="card-title-accent" />
-            <!-- GỌI BACKEND: ReminderService.getNextReminder() → Reminder.getLabel() / getScheduledTime() -->
-            <Label fx:id="nextReminderLabel" styleClass="card-subtitle"
-                   wrapText="true" />
-        </VBox>
-
-    </HBox>
-
-    <!-- ===== MOTIVATION QUOTE ===== -->
-    <VBox styleClass="card" spacing="8" style="-fx-background-color: #1a0a00; -fx-border-color: #FF4500;">
-        <Label text="DAILY MOTIVATION" styleClass="card-title-accent" />
-        <!-- Random quote từ hardcoded array trong DashboardController -->
-        <Label fx:id="motivationLabel"
-               styleClass="motivation-text"
-               wrapText="true" />
     </VBox>
-
-</VBox>
+</ScrollPane>

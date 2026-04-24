@@ -1,46 +1,53 @@
 package com.fittrack.model;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
-/**
- * WorkoutSession.java — STUB cho UI team.
- */
 public class WorkoutSession {
-    private String date;
-    private String sessionName;
-    private ArrayList<Exercise> exercises = new ArrayList<>();
+    private final LocalDate date;
+    private final String sessionName;
+    private final List<Exercise> exercises = new ArrayList<>();
 
     public WorkoutSession(String date, String sessionName) {
+        this(LocalDate.parse(date), sessionName);
+    }
+
+    public WorkoutSession(LocalDate date, String sessionName) {
         this.date = date;
         this.sessionName = sessionName;
     }
 
-    public String getDate() { return date; }
-    public String getSessionName() { return sessionName; }
-
     public void addExercise(Exercise exercise) {
-        exercises.add(exercise); // TODO (Backend): implement
+        if (exercise == null) {
+            throw new IllegalArgumentException("Exercise cannot be null.");
+        }
+        exercises.add(exercise);
     }
 
-    public ArrayList<Exercise> getExercises() { return exercises; }
+    public List<Exercise> getExercises() {
+        return Collections.unmodifiableList(exercises);
+    }
 
-    /**
-     * Linear Search tìm exercise theo tên.
-     * TODO (Backend): implement.
-     */
+    public String getDate() {
+        return date.toString();
+    }
+
+    public String getSessionName() {
+        return sessionName;
+    }
+
     public Exercise findExercise(String name) {
-        for (Exercise ex : exercises) {
-            if (ex.getName().equals(name)) return ex;
+        for (Exercise exercise : exercises) {
+            if (exercise.getName().equalsIgnoreCase(name)) {
+                return exercise;
+            }
         }
         return null;
     }
 
-    /**
-     * Trả về chuỗi tóm tắt session.
-     * TODO (Backend): format đẹp hơn.
-     */
     public String getSummary() {
-        return "Session: " + sessionName + " | Date: " + date
-             + " | Exercises: " + exercises.size();
+        return String.format("%s on %s with %d exercises", sessionName, date, exercises.size());
     }
 }

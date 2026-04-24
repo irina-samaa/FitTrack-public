@@ -1,52 +1,33 @@
 package com.fittrack.util;
 
-import com.fittrack.model.*;
+import com.fittrack.model.BodyPart;
+import com.fittrack.model.ExerciseType;
+import com.fittrack.model.ReminderService;
+import com.fittrack.model.User;
+import com.fittrack.model.WorkoutSession;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.List;
 
-/**
- * DataStore.java — Singleton chứa toàn bộ dữ liệu của app.
- *
- * ⚠️ FILE NÀY LÀ STUB CHO TEAM UI ⚠️
- * Backend team sẽ implement đầy đủ logic bên trong.
- * UI team chỉ cần biết các method signature để compile và test UI.
- *
- * Pattern: Singleton — chỉ có 1 instance duy nhất trong toàn app.
- */
 public class DataStore {
-
-    // Instance duy nhất (Singleton)
     private static DataStore instance;
 
-    // Dữ liệu của app
+    private final User registeredUser;
     private User currentUser;
-    private ArrayList<BodyPart> bodyParts;
-    private ArrayList<WorkoutSession> sessions;
-    private ReminderService reminderService;
+    private final ArrayList<BodyPart> bodyParts = new ArrayList<>();
+    private final ArrayList<WorkoutSession> sessions = new ArrayList<>();
+    private final ReminderService reminderService = new ReminderService();
 
-    /**
-     * Constructor private — không ai new DataStore() được từ bên ngoài.
-     * TODO (Backend): Seed dữ liệu test ở đây.
-     */
     private DataStore() {
-        bodyParts = new ArrayList<>();
-        sessions = new ArrayList<>();
-        reminderService = new ReminderService();
-
-        // TODO (Backend): Tạo test user và seed data theo vibe doc:
-        // User: admin / 1234
-        // HealthMetrics: weight=70, height=175
-        // weightHistory: [68, 69, 70, 70.5, 71, 70, 69.5]
-        // BodyParts: Chest (Bench Press, Push Up, Chest Fly), Legs, Back
-        // Reminders: Chest Day (tomorrow), Leg Day (in 3 days)
-
-        System.out.println("DataStore initialized (stub)");
+        registeredUser = new User("admin", "1234", 70, 175);
+        registeredUser.seedWeightHistory(List.of(68.0, 69.0, 70.0, 70.5, 71.0, 70.0, 69.5));
+        seedBodyParts();
+        seedSessions();
+        seedReminders();
     }
 
-    /**
-     * Lấy instance duy nhất của DataStore.
-     * Nếu chưa tồn tại thì tạo mới.
-     */
     public static DataStore getInstance() {
         if (instance == null) {
             instance = new DataStore();
@@ -54,46 +35,79 @@ public class DataStore {
         return instance;
     }
 
-    // ===== USER =====
+    public boolean authenticate(String username, String password) {
+        boolean valid = registeredUser.getUsername().equals(username) && registeredUser.matchesPassword(password);
+        if (valid) {
+            currentUser = registeredUser;
+        }
+        return valid;
+    }
 
-    /** Lấy user đang đăng nhập */
     public User getCurrentUser() {
-        return currentUser; // TODO (Backend): return currentUser
+        return currentUser;
     }
 
-    /** Set user sau khi login thành công */
     public void setCurrentUser(User user) {
-        this.currentUser = user; // TODO (Backend): implement
+        this.currentUser = user;
     }
 
-    // ===== BODY PARTS =====
-
-    /** Lấy toàn bộ danh sách BodyPart */
     public ArrayList<BodyPart> getBodyParts() {
-        return bodyParts; // TODO (Backend): return list
+        return bodyParts;
     }
 
-    /** Thêm một BodyPart mới */
     public void addBodyPart(BodyPart bodyPart) {
-        bodyParts.add(bodyPart); // TODO (Backend): implement
+        bodyParts.add(bodyPart);
     }
 
-    // ===== WORKOUT SESSIONS =====
-
-    /** Lấy toàn bộ danh sách WorkoutSession */
     public ArrayList<WorkoutSession> getSessions() {
-        return sessions; // TODO (Backend): return list
+        return sessions;
     }
 
-    /** Thêm một WorkoutSession mới vào lịch sử */
     public void addSession(WorkoutSession session) {
-        sessions.add(session); // TODO (Backend): implement
+        sessions.add(session);
+        if (currentUser != null) {
+            currentUser.addWorkoutSession(session);
+        }
     }
 
-    // ===== REMINDER SERVICE =====
-
-    /** Lấy ReminderService (quản lý PriorityQueue reminders) */
     public ReminderService getReminderService() {
-        return reminderService; // TODO (Backend): return service
+        return reminderService;
+    }
+
+    private void seedBodyParts() {
+        BodyPart chest = new BodyPart("Chest");
+        chest.createExercise("Bench Press", ExerciseType.STRENGTH).addSet(8, 60);
+        chest.createExercise("Push Up", ExerciseType.STRENGTH).addSet(20, 0);
+        chest.createExercise("Chest Fly", ExerciseType.STRENGTH).addSet(12, 15);
+
+        BodyPart legs = new BodyPart("Legs");
+        legs.createExercise("Squat", ExerciseType.STRENGTH).addSet(6, 90);
+        legs.createExercise("Treadmill Run", ExerciseType.CARDIO).addSet(20, 3.2);
+
+        BodyPart back = new BodyPart("Back");
+        back.createExercise("Deadlift", ExerciseType.STRENGTH).addSet(5, 100);
+        back.createExercise("Rowing Machine", ExerciseType.ENDURANCE).addSet(18, 145);
+
+        bodyParts.add(chest);
+        bodyParts.add(legs);
+        bodyParts.add(back);
+    }
+
+    private void seedSessions() {
+        WorkoutSession session = new WorkoutSession(LocalDate.now().minusDays(1), "Upper Body Session");
+        for (BodyPart bodyPart : bodyParts) {
+            if ("Chest".equals(bodyPart.getName()) || "Back".equals(bodyPart.getName())) {
+                for (var exercise : bodyPart.getExercises()) {
+                    session.addExercise(exercise);
+                }
+            }
+        }
+        sessions.add(session);
+        registeredUser.addWorkoutSession(session);
+    }
+
+    private void seedReminders() {
+        reminderService.scheduleReminder(registeredUser, "Chest Day", LocalDateTime.now().plusDays(1));
+        reminderService.scheduleReminder(registeredUser, "Leg Day", LocalDateTime.now().plusDays(3));
     }
 }

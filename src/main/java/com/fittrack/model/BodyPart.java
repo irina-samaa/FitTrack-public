@@ -1,46 +1,68 @@
 package com.fittrack.model;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
-/**
- * BodyPart.java — STUB cho UI team.
- * Backend team implement sortExercises() (Insertion Sort) và findExercise() (Linear Search).
- */
 public class BodyPart {
-    private String name;
-    private ArrayList<Exercise> exercises = new ArrayList<>();
+    private final String name;
+    private final List<Exercise> exercises = new ArrayList<>();
 
     public BodyPart(String name) {
-        this.name = name;
+        if (name == null || name.isBlank()) {
+            throw new IllegalArgumentException("Body part name cannot be blank.");
+        }
+        this.name = name.trim();
     }
 
-    public String getName() { return name; }
+    public String getName() {
+        return name;
+    }
 
     public void addExercise(Exercise exercise) {
-        exercises.add(exercise); // TODO (Backend): implement
+        if (exercise == null) {
+            throw new IllegalArgumentException("Exercise cannot be null.");
+        }
+        exercises.add(exercise);
     }
 
-    public ArrayList<Exercise> getExercises() { return exercises; }
+    public void removeExercise(Exercise exercise) {
+        exercises.remove(exercise);
+    }
 
-    /**
-     * Tìm Exercise theo tên — Linear Search.
-     * TODO (Backend): implement vòng lặp tìm kiếm tuyến tính.
-     */
-    public Exercise findExercise(String name) {
-        for (Exercise ex : exercises) {
-            if (ex.getName().equals(name)) return ex;
+    public List<Exercise> getExercises() {
+        return Collections.unmodifiableList(exercises);
+    }
+
+    public Exercise findExercise(String exerciseName) {
+        for (Exercise exercise : exercises) {
+            if (exercise.getName().equalsIgnoreCase(exerciseName)) {
+                return exercise;
+            }
         }
         return null;
     }
 
-    /**
-     * Sắp xếp exercises theo tên — Insertion Sort.
-     * TODO (Backend): implement Insertion Sort theo vibe doc.
-     */
     public void sortExercises() {
-        // TODO (Backend): Insertion Sort
-        // Xem hint trong vibe doc:
-        // for (int i = 1; i < exercises.size(); i++) { ... }
-        System.out.println("TODO: sortExercises() — Backend team implement Insertion Sort");
+        for (int i = 1; i < exercises.size(); i++) {
+            Exercise current = exercises.get(i);
+            int j = i - 1;
+            while (j >= 0 && exercises.get(j).getName().compareToIgnoreCase(current.getName()) > 0) {
+                exercises.set(j + 1, exercises.get(j));
+                j--;
+            }
+            exercises.set(j + 1, current);
+        }
+    }
+
+    public Exercise createExercise(String exerciseName, ExerciseType exerciseType) {
+        Exercise exercise = switch (exerciseType) {
+            case STRENGTH -> new StrengthExercise(exerciseName, this);
+            case CARDIO -> new CardioExercise(exerciseName, this);
+            case ENDURANCE -> new EnduranceExercise(exerciseName, this);
+        };
+        addExercise(exercise);
+        sortExercises();
+        return exercise;
     }
 }

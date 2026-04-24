@@ -8,6 +8,8 @@ import javafx.stage.Modality;
 import javafx.stage.Stage;
 import com.fittrack.controller.LoginController;
 
+import com.fittrack.service.FitnessTrackerService;
+
 /**
  * Main.java — Entry point của ứng dụng FitTrack.
  * Chạy file này để khởi động app.
@@ -16,8 +18,9 @@ public class Main extends Application {
 
     @Override
     public void start(Stage primaryStage) throws Exception {
-        // Bước 1: Hiện Login popup trước khi vào app
-        showLoginPopup(primaryStage);
+        // Auto-login directly to the main page for testing/convenience
+        FitnessTrackerService.getInstance().login("admin", "1234");
+        loadMainWindow(primaryStage);
     }
 
     /**
