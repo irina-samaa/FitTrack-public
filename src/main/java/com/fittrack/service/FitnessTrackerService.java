@@ -147,19 +147,20 @@ public class FitnessTrackerService {
     }
 
     public ArrayList<Reminder> getReminders() {
-        return dataStore.getReminderService().getReminders(requireCurrentUser());
+        return dataStore.getReminderService().getReminders(dataStore.getBodyParts());
     }
 
     public Reminder getReminder(String bodyPartName) {
-        return dataStore.getReminderService().getReminder(requireCurrentUser(), bodyPartName);
+        return dataStore.getReminderService().getReminder(requireBodyPart(bodyPartName));
     }
 
     public Reminder getNextReminder() {
-        return dataStore.getReminderService().getNextReminder(requireCurrentUser());
+        return dataStore.getReminderService().getNextReminder(requireCurrentUser(), dataStore.getBodyParts());
     }
 
     public void createOrUpdateReminder(String bodyPartName, Integer thresholdDays, String note) {
-        dataStore.getReminderService().createOrUpdateReminder(requireCurrentUser(), bodyPartName, thresholdDays, note);
+        requireCurrentUser();
+        dataStore.getReminderService().createOrUpdateReminder(requireBodyPart(bodyPartName), thresholdDays, note);
     }
 
     public int getInactiveDays(Reminder reminder) {
@@ -179,7 +180,7 @@ public class FitnessTrackerService {
     }
 
     public int getDueReminderCount() {
-        return dataStore.getReminderService().getDueCount(requireCurrentUser());
+        return dataStore.getReminderService().getDueCount(requireCurrentUser(), dataStore.getBodyParts());
     }
 
     public List<SetRecord> getSets(String bodyPartName, String exerciseName) {

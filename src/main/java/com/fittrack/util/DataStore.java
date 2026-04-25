@@ -56,8 +56,6 @@ public class DataStore {
 
     public void addBodyPart(BodyPart bodyPart) {
         bodyParts.add(bodyPart);
-        User reminderOwner = currentUser == null ? registeredUser : currentUser;
-        reminderService.addReminder(reminderOwner, bodyPart.getName());
     }
 
     public ArrayList<WorkoutSession> getSessions() {
@@ -117,9 +115,9 @@ public class DataStore {
     }
 
     private void seedReminderDemo() {
-        reminderService.createOrUpdateReminder(registeredUser, "Chest", 5, "Light pressing day if your shoulders feel fresh.");
-        reminderService.createOrUpdateReminder(registeredUser, "Legs", 5, "Do not skip leg day twice.");
-        reminderService.createOrUpdateReminder(registeredUser, "Back", 5, "Rows or pull-downs are enough for a reset session.");
+        reminderService.createOrUpdateReminder(findBodyPart("Chest"), 5, "Light pressing day if your shoulders feel fresh.");
+        reminderService.createOrUpdateReminder(findBodyPart("Legs"), 5, "Do not skip leg day twice.");
+        reminderService.createOrUpdateReminder(findBodyPart("Back"), 5, "Rows or pull-downs are enough for a reset session.");
     }
 
     private BodyPart findBodyPart(String name) {

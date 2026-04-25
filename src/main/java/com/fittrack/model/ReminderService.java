@@ -5,57 +5,37 @@ import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import java.util.PriorityQueue;
 
 public class ReminderService {
-    private final Map<String, Map<String, Reminder>> remindersByUser = new HashMap<>();
-
-    public void addReminder(User user, String bodyPartName) {
-        if (user == null || bodyPartName == null || bodyPartName.isBlank()) {
-            return;
+    public void createOrUpdateReminder(BodyPart bodyPart, Integer thresholdDays, String note) {
+        if (bodyPart == null) {
+            throw new IllegalArgumentException("Body part is required.");
         }
-
-        Map<String, Reminder> reminders = remindersFor(user);
-        String bodyPartKey = normalizeKey(bodyPartName);
-        if (!reminders.containsKey(bodyPartKey)) {
-            reminders.put(bodyPartKey, new Reminder(bodyPartName, null, null));
-        }
+        bodyPart.updateReminder(thresholdDays, note);
     }
 
-    public void createOrUpdateReminder(User user, String bodyPartName, Integer thresholdDays, String note) {
-        if (user == null) {
-            throw new IllegalArgumentException("User is required.");
-        }
-
-        Map<String, Reminder> reminders = remindersFor(user);
-        String bodyPartKey = normalizeKey(bodyPartName);
-        Reminder reminder = reminders.get(bodyPartKey);
-        if (reminder == null) {
-            reminders.put(bodyPartKey, new Reminder(bodyPartName, thresholdDays, note));
-            return;
-        }
-
-        reminder.update(thresholdDays, note);
-    }
-
-    public Reminder getReminder(User user, String bodyPartName) {
-        if (user == null || bodyPartName == null || bodyPartName.isBlank()) {
+    public Reminder getReminder(BodyPart bodyPart) {
+        if (bodyPart == null) {
             return null;
         }
-        return remindersFor(user).get(normalizeKey(bodyPartName));
+        return bodyPart.getReminder();
     }
 
-    public ArrayList<Reminder> getReminders(User user) {
+    public ArrayList<Reminder> getReminders(List<BodyPart> bodyParts) {
         ArrayList<Reminder> reminders = new ArrayList<>();
-        if (user == null) {
+        if (bodyParts == null) {
             return reminders;
         }
 
-        reminders.addAll(remindersFor(user).values());
+        for (BodyPart bodyPart : bodyParts) {
+            if (bodyPart == null) {
+                continue;
+            }
+            reminders.add(bodyPart.getReminder());
+        }
         reminders.sort(new Comparator<Reminder>() {
             @Override
             public int compare(Reminder left, Reminder right) {
@@ -65,7 +45,7 @@ public class ReminderService {
         return reminders;
     }
 
-    public Reminder getNextReminder(User user) {
+    public Reminder getNextReminder(User user, List<BodyPart> bodyParts) {
         if (user == null) {
             return null;
         }
@@ -84,7 +64,7 @@ public class ReminderService {
             }
         });
 
-        for (Reminder reminder : getReminders(user)) {
+        for (Reminder reminder : getReminders(bodyParts)) {
             if (hasStarted(user, reminder)) {
                 reminderQueue.offer(reminder);
             }
@@ -128,13 +108,13 @@ public class ReminderService {
         return hasStarted(user, reminder) && getInactiveDays(user, reminder) >= reminder.getThresholdDays();
     }
 
-    public int getDueCount(User user) {
+    public int getDueCount(User user, List<BodyPart> bodyParts) {
         if (user == null) {
             return 0;
         }
 
         int dueCount = 0;
-        for (Reminder reminder : getReminders(user)) {
+        for (Reminder reminder : getReminders(bodyParts)) {
             if (isDue(user, reminder)) {
                 dueCount++;
             }
@@ -187,14 +167,6 @@ public class ReminderService {
         } catch (DateTimeException exception) {
             return null;
         }
-    }
-
-    private Map<String, Reminder> remindersFor(User user) {
-        String username = user.getUsername();
-        if (!remindersByUser.containsKey(username)) {
-            remindersByUser.put(username, new HashMap<String, Reminder>());
-        }
-        return remindersByUser.get(username);
     }
 
     private String normalizeKey(String bodyPartName) {

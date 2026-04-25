@@ -7,12 +7,14 @@ import java.util.List;
 public class BodyPart {
     private final String name;
     private final List<Exercise> exercises = new ArrayList<>();
+    private final Reminder reminder;
 
     public BodyPart(String name) {
         if (name == null || name.isBlank()) {
             throw new IllegalArgumentException("Body part name cannot be blank.");
         }
         this.name = name.trim();
+        this.reminder = new Reminder(this.name, null, null);
     }
 
     public String getName() {
@@ -32,6 +34,14 @@ public class BodyPart {
 
     public List<Exercise> getExercises() {
         return Collections.unmodifiableList(exercises);
+    }
+
+    public Reminder getReminder() {
+        return reminder;
+    }
+
+    public void updateReminder(Integer thresholdDays, String note) {
+        reminder.update(thresholdDays, note);
     }
 
     public Exercise findExercise(String exerciseName) {
