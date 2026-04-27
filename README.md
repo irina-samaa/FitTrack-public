@@ -38,7 +38,7 @@ cd FitTrack-public
 ### Prerequisites
 
 - Git installed
-- Java 17 installed
+- JDK 17 installed
 - Maven installed
 
 ### Start the app
@@ -48,6 +48,15 @@ mvn clean javafx:run
 ```
 
 If the dependencies are already installed locally, the app should open in a JavaFX window.
+
+### Run in VS Code
+
+- Open the folder in VS Code
+- Make sure the Java extension pack is installed
+- Let Maven import the project dependencies
+- Run the `Run FitTrack (Maven)` task or use the `Launch FitTrack (JavaFX)` launch configuration
+
+Note: the repo no longer stores a project-local `.m2` repository. Maven will use each machine's normal local cache, so the first run may take a moment while JavaFX dependencies are downloaded.
 
 ## Project Structure
 

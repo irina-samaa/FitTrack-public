@@ -84,7 +84,7 @@ public class ScheduleController {
 
         refreshReminderList();
         Reminder updatedReminder = service.getReminder(bodyPartName);
-        if (updatedReminder != null) {
+        if (updatedReminder != null && reminderList.contains(updatedReminder)) {
             reminderTable.getSelectionModel().select(updatedReminder);
             reminderTable.scrollTo(updatedReminder);
             populateForm(updatedReminder);
@@ -99,7 +99,12 @@ public class ScheduleController {
             return;
         }
 
-        reminderList.setAll(service.getReminders());
+        reminderList.clear();
+        for (Reminder reminder : service.getReminders()) {
+            if (service.hasReminderStarted(reminder)) {
+                reminderList.add(reminder);
+            }
+        }
         updateNextReminderLabel();
         if (bodyPartComboBox.getValue() == null && !bodyPartComboBox.getItems().isEmpty()) {
             bodyPartComboBox.getSelectionModel().selectFirst();

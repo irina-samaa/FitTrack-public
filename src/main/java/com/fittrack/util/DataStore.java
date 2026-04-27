@@ -12,6 +12,7 @@ import java.util.List;
 
 public class DataStore {
     private static DataStore instance;
+    private static final boolean LOAD_SAMPLE_DATA = false;
 
     private final User registeredUser;
     private User currentUser;
@@ -21,10 +22,12 @@ public class DataStore {
 
     private DataStore() {
         registeredUser = new User("admin", "1234", 70, 175);
-        registeredUser.seedWeightHistory(List.of(68.0, 69.0, 70.0, 70.5, 71.0, 70.0, 69.5));
-        seedBodyParts();
-        seedSessions();
-        seedReminderDemo();
+        if (LOAD_SAMPLE_DATA) {
+            registeredUser.seedWeightHistory(List.of(68.0, 69.0, 70.0, 70.5, 71.0, 70.0, 69.5));
+            seedBodyParts();
+            seedSessions();
+            seedReminderDemo();
+        }
     }
 
     public static DataStore getInstance() {

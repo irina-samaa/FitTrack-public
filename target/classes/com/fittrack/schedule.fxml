@@ -25,7 +25,7 @@
                 <TableColumn fx:id="noteColumn" text="Note" minWidth="220" />
             </columns>
             <placeholder>
-                <Label text="No reminders configured yet."
+                <Label text="No started reminders yet. Log a workout to begin countdowns."
                        style="-fx-text-fill: #666;" />
             </placeholder>
         </TableView>
@@ -34,7 +34,7 @@
     <VBox styleClass="card" spacing="10">
         <Label text="UPDATE REMINDER" styleClass="card-title-accent" />
 
-        <Label text="Each body part has one reminder config. Countdown starts automatically after the first logged workout for that body part."
+        <Label text="Countdown starts automatically after the first logged workout for that body part."
                styleClass="card-subtitle"
                wrapText="true" />
 
