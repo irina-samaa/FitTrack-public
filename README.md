@@ -1,5 +1,7 @@
 # FitTrack
 
+**README không chuẩn 100%, đọc cách tải xuống thôi nhé:)**
+
 FitTrack is a JavaFX fitness tracking desktop app for logging workouts, monitoring health metrics, viewing progress trends, and managing workout reminders in one place.
 
 ## Features
