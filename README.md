@@ -41,22 +41,102 @@ cd FitTrack-public
 - JDK 17 installed
 - Maven installed
 
-### Start the app
+### 1. Open the project folder
+
+If you have not cloned the repo yet, follow the `How To Clone` section above first.
+
+Then open a terminal inside the `FitTrack-public` folder.
+
+### 2. Check Java and Maven
+
+Open a terminal in the project folder and run:
+
+```powershell
+java -version
+mvn -version
+```
+
+You should see:
+
+- Java version `17`
+- A Maven version output instead of a "command not found" or "not recognized" error
+
+If `java -version` fails, install JDK 17 and make sure Java is added to your `PATH`.
+
+If `mvn -version` fails, install Maven and make sure Maven's `bin` folder is added to your `PATH`.
+
+### 3. Run the app from the terminal
 
 ```powershell
 mvn clean javafx:run
 ```
 
-If the dependencies are already installed locally, the app should open in a JavaFX window.
+What this command does:
 
-### Run in VS Code
+- `clean` removes old compiled files from previous runs
+- `javafx:run` builds the project and launches the JavaFX app
+
+Notes:
+
+- The first run on a new machine may take a little longer because Maven needs to download dependencies into the user's local `.m2` cache.
+- You do not need a project-local `.m2` folder in this repo.
+- If everything is set up correctly, a JavaFX window should open after Maven finishes building.
+
+### 4. Run the app in VS Code
 
 - Open the folder in VS Code
 - Make sure the Java extension pack is installed
 - Let Maven import the project dependencies
-- Run the `Run FitTrack (Maven)` task or use the `Launch FitTrack (JavaFX)` launch configuration
+- Wait until the Java language server finishes loading the project
+- Open `pom.xml` once if VS Code has not auto-detected Maven yet
+- Run the `Launch FitTrack (JavaFX)` launch configuration from the Run and Debug panel
 
-Note: the repo no longer stores a project-local `.m2` repository. Maven will use each machine's normal local cache, so the first run may take a moment while JavaFX dependencies are downloaded.
+If VS Code asks to import or trust the Maven project, accept it.
+
+### 5. Common setup issues
+
+#### `mvn` is not recognized
+
+This means Maven is not installed or not added to `PATH`.
+
+Fix:
+
+- Install Maven
+- Add Maven's `bin` directory to your system `PATH`
+- Reopen the terminal and run `mvn -version` again
+
+#### `java` is not recognized
+
+This means Java is not installed or not added to `PATH`.
+
+Fix:
+
+- Install JDK 17
+- Add the JDK `bin` directory to your system `PATH`
+- Reopen the terminal and run `java -version` again
+
+#### The Java version is not 17
+
+This project is configured for Java 17 in `pom.xml`.
+
+Fix:
+
+- Switch your machine or IDE to JDK 17
+- Then rerun `java -version`
+
+#### The first run takes a long time
+
+This is normal on a new machine. Maven may need to download JavaFX and plugin dependencies before the app can start.
+
+#### The app builds but no window appears in VS Code
+
+Try running from the terminal first:
+
+```powershell
+mvn clean javafx:run
+```
+
+If that works, the issue is usually VS Code's Java configuration rather than the project itself.
 
 ## Project Structure
 
