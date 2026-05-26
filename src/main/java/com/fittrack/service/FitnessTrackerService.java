@@ -12,9 +12,10 @@ import com.fittrack.model.WorkoutSession;
 import com.fittrack.util.DataStore;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 public class FitnessTrackerService {
     private static FitnessTrackerService instance;
@@ -101,11 +102,13 @@ public class FitnessTrackerService {
             : sessionName.trim();
         WorkoutSession session = new WorkoutSession(LocalDate.now(), resolvedSessionName);
         List<Exercise> exercisesToClear = new ArrayList<>();
+        Set<String> loggedBodyPartNames = new LinkedHashSet<>();
         for (BodyPart bodyPart : dataStore.getBodyParts()) {
             for (Exercise exercise : bodyPart.getExercises()) {
                 if (exercise.hasSets()) {
                     session.addExercise(exercise.copy());
                     exercisesToClear.add(exercise);
+                    loggedBodyPartNames.add(bodyPart.getName());
                 }
             }
         }
@@ -117,8 +120,7 @@ public class FitnessTrackerService {
             exercise.clearSets();
         }
 
-        // Reset repeating reminders since a workout was completed
-        dataStore.getReminderService().resetRepeatingReminders(currentUser);
+        dataStore.getReminderService().logBodyParts(currentUser, loggedBodyPartNames);
 
         dataStore.saveCurrentUserSessions();
         dataStore.saveCurrentUserWorkoutDraft();
@@ -166,23 +168,22 @@ public class FitnessTrackerService {
         return progressTracker.getLabels(requireCurrentUser());
     }
 
-    public void scheduleReminder(String label, LocalDateTime time, Integer repeatIntervalDays) {
-        scheduleReminder(label, time, repeatIntervalDays, null);
+    public int getDefaultReminderDays() {
+        return com.fittrack.model.ReminderService.DEFAULT_INTERVAL_DAYS;
     }
 
-    public void scheduleReminder(String label, LocalDateTime time, Integer repeatIntervalDays, String note) {
-        dataStore.getReminderService().scheduleReminder(requireCurrentUser(), label, time, repeatIntervalDays, note);
+    public void updateBodyPartReminderDays(String bodyPartName, int days) {
+        User user = requireCurrentUser();
+        BodyPart bodyPart = requireBodyPart(bodyPartName);
+        boolean updated = dataStore.getReminderService().updateBodyPartReminderDays(user, bodyPart.getName(), days, dataStore.getSessions());
+        if (!updated) {
+            throw new IllegalStateException("Log this body part once before changing its reminder.");
+        }
         dataStore.saveCurrentUserReminders();
     }
 
     public Reminder getNextReminder() {
         return dataStore.getReminderService().getNextReminder(requireCurrentUser());
-    }
-
-    public Reminder removeNextReminder() {
-        Reminder reminder = dataStore.getReminderService().removeNextReminder(requireCurrentUser());
-        dataStore.saveCurrentUserReminders();
-        return reminder;
     }
 
     public ArrayList<Reminder> getAllReminders() {

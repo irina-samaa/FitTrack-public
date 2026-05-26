@@ -18,6 +18,8 @@ import java.sql.Statement;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.List;
 
 public class SQLiteRepository {
@@ -151,7 +153,7 @@ public class SQLiteRepository {
             deleteSessions(connection, userId);
 
             String sessionSql = "INSERT INTO workout_sessions(user_id, session_date, session_name) VALUES (?, ?, ?)";
-            String exerciseSql = "INSERT INTO session_exercises(session_id, name, type) VALUES (?, ?, ?)";
+            String exerciseSql = "INSERT INTO session_exercises(session_id, name, type, body_part_name) VALUES (?, ?, ?, ?)";
             String setSql = "INSERT INTO session_sets(session_exercise_id, metric1, metric2) VALUES (?, ?, ?)";
 
             try (PreparedStatement sessionStatement = connection.prepareStatement(sessionSql, Statement.RETURN_GENERATED_KEYS);
@@ -181,14 +183,10 @@ public class SQLiteRepository {
             try (PreparedStatement statement = connection.prepareStatement(sql)) {
                 for (Reminder reminder : reminders) {
                     statement.setLong(1, userId);
-                    statement.setString(2, reminder.getLabel());
+                    statement.setString(2, reminder.getBodyPartName());
                     statement.setString(3, reminder.getScheduledTime().toString());
-                    if (reminder.getRepeatIntervalDays() == null) {
-                        statement.setNull(4, java.sql.Types.INTEGER);
-                    } else {
-                        statement.setInt(4, reminder.getRepeatIntervalDays());
-                    }
-                    statement.setString(5, reminder.getNote());
+                    statement.setInt(4, reminder.getIntervalDays());
+                    statement.setNull(5, java.sql.Types.VARCHAR);
                     statement.addBatch();
                 }
                 statement.executeBatch();
@@ -264,9 +262,11 @@ public class SQLiteRepository {
                     session_id INTEGER NOT NULL,
                     name TEXT NOT NULL,
                     type TEXT NOT NULL,
+                    body_part_name TEXT,
                     FOREIGN KEY(session_id) REFERENCES workout_sessions(id) ON DELETE CASCADE
                 )
                 """);
+            ensureSessionExerciseBodyPartNameColumn(connection);
             statement.execute("""
                 CREATE TABLE IF NOT EXISTS session_sets (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -318,6 +318,25 @@ public class SQLiteRepository {
                 ) || ' days')
                 WHERE record_date IS NULL OR record_date = ''
                 """);
+        }
+    }
+
+    private void ensureSessionExerciseBodyPartNameColumn(Connection connection) throws SQLException {
+        boolean hasBodyPartName = false;
+        try (Statement statement = connection.createStatement();
+             ResultSet columns = statement.executeQuery("PRAGMA table_info(session_exercises)")) {
+            while (columns.next()) {
+                if ("body_part_name".equalsIgnoreCase(columns.getString("name"))) {
+                    hasBodyPartName = true;
+                    break;
+                }
+            }
+        }
+
+        if (!hasBodyPartName) {
+            try (Statement statement = connection.createStatement()) {
+                statement.execute("ALTER TABLE session_exercises ADD COLUMN body_part_name TEXT");
+            }
         }
     }
 
@@ -390,7 +409,7 @@ public class SQLiteRepository {
         }
 
         String sessionSql = "INSERT INTO workout_sessions(user_id, session_date, session_name) VALUES (?, ?, ?)";
-        String exerciseSql = "INSERT INTO session_exercises(session_id, name, type) VALUES (?, ?, ?)";
+        String exerciseSql = "INSERT INTO session_exercises(session_id, name, type, body_part_name) VALUES (?, ?, ?, ?)";
         String setSql = "INSERT INTO session_sets(session_exercise_id, metric1, metric2) VALUES (?, ?, ?)";
 
         try (PreparedStatement sessionStatement = connection.prepareStatement(sessionSql, Statement.RETURN_GENERATED_KEYS);
@@ -408,17 +427,17 @@ public class SQLiteRepository {
         String sql = "INSERT INTO reminders(user_id, label, scheduled_time, repeat_interval_days, note) VALUES (?, ?, ?, ?, ?)";
         try (PreparedStatement statement = connection.prepareStatement(sql)) {
             statement.setLong(1, adminId);
-            statement.setString(2, "Chest Day");
-            statement.setString(3, LocalDateTime.now().plusDays(1).toString());
-            statement.setNull(4, java.sql.Types.INTEGER);
-            statement.setString(5, "Push focus + warm up shoulders");
+            statement.setString(2, "Chest");
+            statement.setString(3, LocalDateTime.now().plusDays(5).toString());
+            statement.setInt(4, 5);
+            statement.setNull(5, java.sql.Types.VARCHAR);
             statement.addBatch();
 
             statement.setLong(1, adminId);
-            statement.setString(2, "Leg Day");
-            statement.setString(3, LocalDateTime.now().plusDays(3).toString());
-            statement.setNull(4, java.sql.Types.INTEGER);
-            statement.setString(5, null);
+            statement.setString(2, "Back");
+            statement.setString(3, LocalDateTime.now().plusDays(5).toString());
+            statement.setInt(4, 5);
+            statement.setNull(5, java.sql.Types.VARCHAR);
             statement.addBatch();
 
             statement.executeBatch();
@@ -498,8 +517,9 @@ public class SQLiteRepository {
 
     private ArrayList<WorkoutSession> loadSessions(Connection connection, long userId) throws SQLException {
         ArrayList<WorkoutSession> result = new ArrayList<>();
+        Map<String, String> bodyPartByExerciseName = loadBodyPartNamesByExerciseName(connection, userId);
         String sessionSql = "SELECT id, session_date, session_name FROM workout_sessions WHERE user_id = ? ORDER BY id ASC";
-        String exerciseSql = "SELECT id, name, type FROM session_exercises WHERE session_id = ? ORDER BY id ASC";
+        String exerciseSql = "SELECT id, name, type, body_part_name FROM session_exercises WHERE session_id = ? ORDER BY id ASC";
         String setSql = "SELECT metric1, metric2 FROM session_sets WHERE session_exercise_id = ? ORDER BY id ASC";
 
         try (PreparedStatement sessionStatement = connection.prepareStatement(sessionSql);
@@ -515,9 +535,17 @@ public class SQLiteRepository {
                     exerciseStatement.setLong(1, sessionRows.getLong("id"));
                     try (ResultSet exerciseRows = exerciseStatement.executeQuery()) {
                         while (exerciseRows.next()) {
-                            BodyPart historyBodyPart = new BodyPart("History");
+                            String exerciseName = exerciseRows.getString("name");
+                            String bodyPartName = exerciseRows.getString("body_part_name");
+                            if (bodyPartName == null || bodyPartName.isBlank()) {
+                                bodyPartName = bodyPartByExerciseName.get(exerciseName.toLowerCase());
+                            }
+                            if (bodyPartName == null || bodyPartName.isBlank()) {
+                                bodyPartName = "History";
+                            }
+                            BodyPart historyBodyPart = new BodyPart(bodyPartName);
                             Exercise exercise = historyBodyPart.createExercise(
-                                exerciseRows.getString("name"),
+                                exerciseName,
                                 ExerciseType.fromDisplayName(exerciseRows.getString("type"))
                             );
                             setStatement.setLong(1, exerciseRows.getLong("id"));
@@ -536,23 +564,44 @@ public class SQLiteRepository {
         return result;
     }
 
+    private Map<String, String> loadBodyPartNamesByExerciseName(Connection connection, long userId) throws SQLException {
+        Map<String, String> result = new HashMap<>();
+        String sql = """
+            SELECT e.name AS exercise_name, b.name AS body_part_name
+            FROM exercises e
+            JOIN body_parts b ON b.id = e.body_part_id
+            WHERE b.user_id = ?
+            ORDER BY b.id ASC, e.id ASC
+            """;
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setLong(1, userId);
+            try (ResultSet rows = statement.executeQuery()) {
+                while (rows.next()) {
+                    result.putIfAbsent(
+                        rows.getString("exercise_name").toLowerCase(),
+                        rows.getString("body_part_name")
+                    );
+                }
+            }
+        }
+        return result;
+    }
+
     private ArrayList<Reminder> loadReminders(Connection connection, long userId) throws SQLException {
         ArrayList<Reminder> result = new ArrayList<>();
-        String sql = "SELECT label, scheduled_time, repeat_interval_days, note FROM reminders WHERE user_id = ? ORDER BY scheduled_time ASC, id ASC";
+        String sql = "SELECT label, scheduled_time, repeat_interval_days FROM reminders WHERE user_id = ? ORDER BY scheduled_time ASC, id ASC";
         try (PreparedStatement statement = connection.prepareStatement(sql)) {
             statement.setLong(1, userId);
             try (ResultSet resultSet = statement.executeQuery()) {
                 while (resultSet.next()) {
-                    Integer repeatInterval = null;
-                    int repeatValue = resultSet.getInt("repeat_interval_days");
-                    if (!resultSet.wasNull()) {
-                        repeatInterval = repeatValue;
+                    int intervalDays = resultSet.getInt("repeat_interval_days");
+                    if (resultSet.wasNull() || intervalDays <= 0) {
+                        continue;
                     }
                     result.add(new Reminder(
                         resultSet.getString("label"),
                         LocalDateTime.parse(resultSet.getString("scheduled_time")),
-                        repeatInterval,
-                        resultSet.getString("note")
+                        intervalDays
                     ));
                 }
             }
@@ -636,6 +685,12 @@ public class SQLiteRepository {
         statement.setLong(1, sessionId);
         statement.setString(2, exercise.getName());
         statement.setString(3, exercise.getExerciseType().name());
+        String bodyPartName = exercise.getBodyPart().getName();
+        if (bodyPartName == null || bodyPartName.isBlank() || "History".equalsIgnoreCase(bodyPartName)) {
+            statement.setNull(4, java.sql.Types.VARCHAR);
+        } else {
+            statement.setString(4, bodyPartName);
+        }
         statement.executeUpdate();
         return generatedId(statement, "session exercise");
     }

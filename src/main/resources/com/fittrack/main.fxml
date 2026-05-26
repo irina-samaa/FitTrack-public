@@ -15,7 +15,7 @@
     <top>
         <HBox styleClass="top-bar" alignment="CENTER_LEFT" spacing="12">
             <!-- App name on the left -->
-            <Label text="🔥 FitTrack" styleClass="app-title-small" />
+            <Label text="FitTrack" styleClass="app-title-small" />
 
             <!-- Spacer that pushes the username and buttons to the right -->
             <Region HBox.hgrow="ALWAYS" />
@@ -61,11 +61,7 @@
                     maxWidth="Infinity"
                     onAction="#goProgress" />
 
-            <!-- Spacer that pushes the version label to the bottom -->
             <Region VBox.vgrow="ALWAYS" />
-
-            <Label text="FitTrack v1.0" styleClass="hint-text"
-                   style="-fx-text-fill: #444; -fx-padding: 8 4;" />
         </VBox>
     </left>
 

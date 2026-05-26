@@ -19,6 +19,7 @@
 
     <HBox spacing="14" fillHeight="true" VBox.vgrow="ALWAYS">
         <VBox spacing="10" maxWidth="Infinity" prefWidth="0" HBox.hgrow="ALWAYS">
+            <Label text="Weight Trend" styleClass="chart-title-label" />
             <LineChart fx:id="weightChart"
                        styleClass="dark-chart"
                        animated="false"
@@ -40,6 +41,7 @@
         </VBox>
 
         <VBox spacing="10" maxWidth="Infinity" prefWidth="0" HBox.hgrow="ALWAYS">
+            <Label text="Workout Load" styleClass="chart-title-label" />
             <LineChart fx:id="workloadChart"
                        styleClass="dark-chart"
                        animated="false"

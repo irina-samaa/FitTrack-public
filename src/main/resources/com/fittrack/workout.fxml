@@ -4,8 +4,8 @@
 
 <VBox xmlns:fx="http://javafx.com/fxml"
       fx:controller="com.fittrack.controller.WorkoutController"
-      spacing="16"
-      style="-fx-padding: 24; -fx-background-color: #0F0F0F;">
+      spacing="12"
+      style="-fx-padding: 18; -fx-background-color: #0F0F0F;">
 
     <Label text="Workout Builder" styleClass="screen-title" />
 
@@ -22,8 +22,10 @@
                 onAction="#startWorkoutSession" />
     </HBox>
 
-    <FlowPane hgap="12" vgap="12" prefWrapLength="1020" VBox.vgrow="ALWAYS">
-        <VBox styleClass="card" spacing="8" minWidth="220" prefWidth="260">
+    <HBox spacing="10" fillHeight="true" VBox.vgrow="ALWAYS">
+        <VBox styleClass="card" spacing="8"
+              minWidth="220" prefWidth="250" maxWidth="280"
+              HBox.hgrow="SOMETIMES">
             <Label text="BODY PARTS" styleClass="card-title-accent" />
             <ListView fx:id="bodyPartListView"
                       styleClass="dark-list"
@@ -39,7 +41,9 @@
             </HBox>
         </VBox>
 
-        <VBox styleClass="card" spacing="8" minWidth="280" prefWidth="320">
+        <VBox styleClass="card" spacing="8"
+              minWidth="270" prefWidth="320" maxWidth="360"
+              HBox.hgrow="SOMETIMES">
             <Label fx:id="selectedBodyPartLabel"
                    text="EXERCISES"
                    styleClass="card-title-accent" />
@@ -53,14 +57,16 @@
                            HBox.hgrow="ALWAYS" />
                 <ComboBox fx:id="exerciseTypeComboBox"
                           styleClass="dark-combo"
-                          prefWidth="120" />
+                          prefWidth="108" />
                 <Button text="+"
                         styleClass="accent-button"
                         onAction="#addExercise" />
             </HBox>
         </VBox>
 
-        <VBox styleClass="card" spacing="8" minWidth="380" prefWidth="460">
+        <VBox styleClass="card" spacing="8"
+              minWidth="320" prefWidth="350" maxWidth="Infinity"
+              HBox.hgrow="ALWAYS">
             <Label fx:id="selectedExerciseLabel"
                    text="SETS"
                    styleClass="card-title-accent" />
@@ -69,10 +75,10 @@
                        styleClass="dark-table"
                        VBox.vgrow="ALWAYS">
                 <columns>
-                    <TableColumn fx:id="setTypeColumn" text="Type" minWidth="80" />
-                    <TableColumn fx:id="primaryMetricColumn" text="Metric 1" minWidth="95" />
-                    <TableColumn fx:id="secondaryMetricColumn" text="Metric 2" minWidth="105" />
-                    <TableColumn fx:id="workloadColumn" text="Exercise Total" minWidth="110" />
+                    <TableColumn fx:id="setTypeColumn" text="Type" minWidth="66" prefWidth="72" />
+                    <TableColumn fx:id="primaryMetricColumn" text="Metric 1" minWidth="76" prefWidth="82" />
+                    <TableColumn fx:id="secondaryMetricColumn" text="Metric 2" minWidth="82" prefWidth="90" />
+                    <TableColumn fx:id="workloadColumn" text="Exercise Total" minWidth="104" prefWidth="116" />
                 </columns>
             </TableView>
 
@@ -87,24 +93,30 @@
                     <TextField fx:id="firstMetricField"
                                promptText="Metric 1"
                                styleClass="dark-input"
-                               prefWidth="100" />
+                               prefWidth="84" />
                 </VBox>
                 <VBox spacing="4">
                     <Label fx:id="secondMetricLabel" text="Metric 2" styleClass="field-label" />
                     <TextField fx:id="secondMetricField"
                                promptText="Metric 2"
                                styleClass="dark-input"
-                               prefWidth="120" />
+                               prefWidth="96" />
                 </VBox>
                 <Button text="+"
                         styleClass="accent-button"
-                        prefWidth="90"
+                        prefWidth="72"
+                        minHeight="40"
+                        prefHeight="40"
+                        maxHeight="40"
                         onAction="#addSet" />
                 <Button text="Delete"
                         styleClass="danger-button"
-                        prefWidth="90"
+                        prefWidth="78"
+                        minHeight="40"
+                        prefHeight="40"
+                        maxHeight="40"
                         onAction="#deleteSet" />
             </HBox>
         </VBox>
-    </FlowPane>
+    </HBox>
 </VBox>

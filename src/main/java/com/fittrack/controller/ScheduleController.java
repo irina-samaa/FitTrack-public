@@ -1,21 +1,20 @@
 package com.fittrack.controller;
 
+import com.fittrack.model.BodyPart;
 import com.fittrack.model.Reminder;
 import com.fittrack.service.FitnessTrackerService;
+import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.scene.control.Alert;
-import javafx.scene.control.ButtonType;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
 
-import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
 
 public class ScheduleController {
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
@@ -23,21 +22,15 @@ public class ScheduleController {
     @FXML
     private TableView<Reminder> reminderTable;
     @FXML
-    private TableColumn<Reminder, String> labelColumn;
+    private TableColumn<Reminder, String> bodyPartColumn;
+    @FXML
+    private TableColumn<Reminder, String> intervalColumn;
     @FXML
     private TableColumn<Reminder, String> timeColumn;
     @FXML
-    private TableColumn<Reminder, String> noteColumn;
+    private ComboBox<String> bodyPartComboBox;
     @FXML
-    private TextField reminderLabelField;
-    @FXML
-    private TextField reminderTimeField;
-    @FXML
-    private TextField reminderNoteField;
-    @FXML
-    private ComboBox<String> reminderTypeComboBox;
-    @FXML
-    private Label reminderInputLabel;
+    private TextField reminderDaysField;
     @FXML
     private Label nextReminderLabel;
 
@@ -46,99 +39,65 @@ public class ScheduleController {
 
     @FXML
     private void initialize() {
-        labelColumn.setCellValueFactory(
-                cell -> new javafx.beans.property.SimpleStringProperty(cell.getValue().getLabel()));
-        timeColumn.setCellValueFactory(cell -> new javafx.beans.property.SimpleStringProperty(
-                cell.getValue().getScheduledTime().format(FORMATTER)));
-        noteColumn.setCellValueFactory(cell -> new javafx.beans.property.SimpleStringProperty(
-                cell.getValue().getNote() == null ? "-" : cell.getValue().getNote()));
+        bodyPartColumn.setCellValueFactory(cell -> new SimpleStringProperty(cell.getValue().getBodyPartName()));
+        intervalColumn.setCellValueFactory(cell -> new SimpleStringProperty(cell.getValue().getIntervalDays() + " days"));
+        timeColumn.setCellValueFactory(cell -> new SimpleStringProperty(
+            cell.getValue().getScheduledTime().format(FORMATTER)));
         reminderTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
         reminderTable.setItems(reminderList);
 
-        reminderTypeComboBox.getItems().addAll("Specific Date & Time", "Repeat (Inactivity)");
-        reminderTypeComboBox.setValue("Specific Date & Time");
-        reminderTypeComboBox.setOnAction(e -> updateReminderInputMode());
-
+        refreshBodyPartChoices();
         refreshReminderList();
     }
 
-    private void updateReminderInputMode() {
-        if ("Repeat (Inactivity)".equals(reminderTypeComboBox.getValue())) {
-            reminderInputLabel.setText("REPEAT EVERY (DAYS)");
-            reminderTimeField.setPromptText("e.g. 3");
-            reminderTimeField.clear();
-        } else {
-            reminderInputLabel.setText("DATE & TIME");
-            reminderTimeField.setPromptText("yyyy-MM-dd HH:mm");
-            reminderTimeField.clear();
-        }
-    }
-
     @FXML
-    private void addReminder() {
+    private void updateReminderDays() {
         if (service.getCurrentUser() == null) {
-            showAlert("Please log in before adding reminders.");
+            showAlert("Please log in before changing reminders.");
             return;
         }
 
-        String label = reminderLabelField.getText().trim();
-        String inputText = reminderTimeField.getText().trim();
-        String note = reminderNoteField.getText().trim();
-        if (label.isEmpty() || inputText.isEmpty()) {
-            showAlert("Please enter both the label and the time/day value.");
+        String bodyPartName = getSelectedBodyPartName();
+        if (bodyPartName.isEmpty()) {
+            showAlert("Please choose a body part.");
+            return;
+        }
+        if (service.findBodyPart(bodyPartName) == null) {
+            showAlert("Body part not found: " + bodyPartName);
             return;
         }
 
-        if ("Repeat (Inactivity)".equals(reminderTypeComboBox.getValue())) {
+        int days;
+        String daysText = reminderDaysField.getText().trim();
+        if (daysText.isEmpty()) {
+            days = service.getDefaultReminderDays();
+        } else {
             try {
-                int days = Integer.parseInt(inputText);
-                if (days <= 0) {
-                    showAlert("The number of days must be greater than 0.");
-                    return;
-                }
-                service.scheduleReminder(label, LocalDateTime.now().plusDays(days), days, note);
+                days = Integer.parseInt(daysText);
             } catch (NumberFormatException e) {
                 showAlert("The number of days must be a whole number.");
                 return;
             }
-        } else {
-            try {
-                LocalDateTime time = LocalDateTime.parse(inputText, FORMATTER);
-                service.scheduleReminder(label, time, null, note);
-            } catch (DateTimeParseException e) {
-                showAlert("Invalid time format. Use yyyy-MM-dd HH:mm.");
-                return;
-            }
+        }
+        if (days <= 0) {
+            showAlert("The number of days must be greater than 0.");
+            return;
         }
 
-        reminderLabelField.clear();
-        reminderTimeField.clear();
-        reminderNoteField.clear();
-        refreshReminderList();
+        try {
+            service.updateBodyPartReminderDays(bodyPartName, days);
+            reminderDaysField.clear();
+            refreshReminderList();
+        } catch (IllegalStateException | IllegalArgumentException e) {
+            showAlert(e.getMessage());
+        }
     }
 
-    @FXML
-    private void removeNextReminder() {
-        if (service.getCurrentUser() == null) {
-            showAlert("Please log in before removing reminders.");
-            return;
+    private void refreshBodyPartChoices() {
+        bodyPartComboBox.getItems().clear();
+        for (BodyPart bodyPart : service.getBodyParts()) {
+            bodyPartComboBox.getItems().add(bodyPart.getName());
         }
-
-        Reminder next = service.getNextReminder();
-        if (next == null) {
-            showAlert("There are no reminders.");
-            return;
-        }
-
-        Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
-        confirm.setHeaderText("Remove the next reminder?");
-        confirm.setContentText(next.toString());
-        confirm.showAndWait().ifPresent(result -> {
-            if (result == ButtonType.OK) {
-                service.removeNextReminder();
-                refreshReminderList();
-            }
-        });
     }
 
     private void refreshReminderList() {
@@ -151,10 +110,19 @@ public class ScheduleController {
         reminderList.setAll(service.getAllReminders());
         Reminder next = service.getNextReminder();
         if (next == null) {
-            nextReminderLabel.setText("No upcoming reminders");
+            nextReminderLabel.setText("No body part reminders yet");
             return;
         }
-        nextReminderLabel.setText("Next: " + next.getLabel() + " - " + next.getScheduledTime().format(FORMATTER));
+        nextReminderLabel.setText(
+            "Next: " + next.getBodyPartName() + " - " + next.getScheduledTime().format(FORMATTER));
+    }
+
+    private String getSelectedBodyPartName() {
+        if (bodyPartComboBox.isEditable()) {
+            return bodyPartComboBox.getEditor().getText().trim();
+        }
+        String value = bodyPartComboBox.getValue();
+        return value == null ? "" : value.trim();
     }
 
     private void showAlert(String message) {

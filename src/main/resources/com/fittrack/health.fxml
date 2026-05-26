@@ -4,8 +4,8 @@
 
 <VBox xmlns:fx="http://javafx.com/fxml"
       fx:controller="com.fittrack.controller.HealthController"
-      spacing="14"
-      style="-fx-padding: 24; -fx-background-color: #0F0F0F;">
+      spacing="12"
+      style="-fx-padding: 20; -fx-background-color: #0F0F0F;">
 
     <HBox alignment="CENTER_LEFT" spacing="18">
         <Label text="Health Metrics" styleClass="screen-title" />
@@ -14,7 +14,7 @@
         <Label fx:id="currentHeightLabel" styleClass="subtitle-text" />
     </HBox>
 
-    <VBox styleClass="card" spacing="12" maxHeight="130">
+    <VBox styleClass="card" spacing="12">
         <Label text="UPDATE MEASUREMENTS" styleClass="card-title-accent" />
         <GridPane hgap="14" vgap="8">
             <columnConstraints>
@@ -47,9 +47,10 @@
         </GridPane>
     </VBox>
 
-    <HBox spacing="14" fillHeight="true" VBox.vgrow="ALWAYS">
+    <HBox spacing="14" fillHeight="true" alignment="TOP_LEFT">
         <VBox styleClass="card" spacing="10" alignment="CENTER"
-              minWidth="220" prefWidth="260" maxHeight="Infinity">
+              minWidth="220" prefWidth="260"
+              minHeight="250" prefHeight="250">
             <Label text="BMI" styleClass="card-title-accent" />
             <Label fx:id="bmiResultLabel"
                    styleClass="bmi-number"
@@ -57,17 +58,21 @@
             <Label fx:id="bmiCategoryBadge" text="-" />
         </VBox>
 
-        <VBox styleClass="card" spacing="8" HBox.hgrow="ALWAYS" maxWidth="Infinity">
+        <VBox styleClass="card" spacing="10" alignment="TOP_LEFT"
+              minHeight="250" prefHeight="250"
+              HBox.hgrow="ALWAYS" maxWidth="Infinity">
+            <Region prefHeight="22" />
             <Label text="RECOMMENDATION" styleClass="card-title-accent" />
             <Label fx:id="recommendationLabel"
                    styleClass="body-text"
                    wrapText="true"
                    style="-fx-font-size: 15; -fx-text-fill: #AAAAAA;" />
-            <Separator />
+            <Separator style="-fx-padding: 3 0 5 0;" />
             <GridPane hgap="18" vgap="8">
                 <columnConstraints>
-                    <ColumnConstraints percentWidth="50" />
-                    <ColumnConstraints percentWidth="50" />
+                    <ColumnConstraints percentWidth="34" />
+                    <ColumnConstraints percentWidth="24" />
+                    <ColumnConstraints percentWidth="42" />
                 </columnConstraints>
                 <Label text="&lt; 18.5 -> Underweight" style="-fx-text-fill: #00E5FF; -fx-font-size: 12;" GridPane.columnIndex="0" GridPane.rowIndex="0" />
                 <Label text="18.5 - 24.9 -> Normal" style="-fx-text-fill: #39FF14; -fx-font-size: 12;" GridPane.columnIndex="1" GridPane.rowIndex="0" />

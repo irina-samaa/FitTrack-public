@@ -29,17 +29,28 @@ public class DashboardController {
     private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm:ss");
     private static final DateTimeFormatter SHORT_DATE_FORMATTER = DateTimeFormatter.ofPattern("MMM d");
 
-    @FXML private Label sessionCountLabel;
-    @FXML private Label lastSessionLabel;
-    @FXML private Label bmiValueLabel;
-    @FXML private Label bmiCategoryLabel;
-    @FXML private Label reminderTitleLabel;
-    @FXML private Label reminderTimeLabel;
-    @FXML private Label todayDateLabel;
-    @FXML private Label currentTimeLabel;
-    @FXML private Label upcomingCountLabel;
-    @FXML private ListView<String> exerciseWorkloadsListView;
-    @FXML private ListView<String> sessionWorkloadsListView;
+    @FXML
+    private Label sessionCountLabel;
+    @FXML
+    private Label lastSessionLabel;
+    @FXML
+    private Label bmiValueLabel;
+    @FXML
+    private Label bmiCategoryLabel;
+    @FXML
+    private Label reminderTitleLabel;
+    @FXML
+    private Label reminderTimeLabel;
+    @FXML
+    private Label todayDateLabel;
+    @FXML
+    private Label currentTimeLabel;
+    @FXML
+    private Label upcomingCountLabel;
+    @FXML
+    private ListView<String> exerciseWorkloadsListView;
+    @FXML
+    private ListView<String> sessionWorkloadsListView;
 
     private final FitnessTrackerService service = FitnessTrackerService.getInstance();
     private Timeline clockTimeline;
@@ -133,7 +144,7 @@ public class DashboardController {
             return;
         }
 
-        reminderTitleLabel.setText(next.getLabel());
+        reminderTitleLabel.setText(next.getBodyPartName());
         reminderTimeLabel.setText(next.getScheduledTime().format(FORMATTER));
     }
 
@@ -159,19 +170,20 @@ public class DashboardController {
     }
 
     private void loadPastExercises() {
-        if (exerciseWorkloadsListView == null || sessionWorkloadsListView == null) return;
+        if (exerciseWorkloadsListView == null || sessionWorkloadsListView == null)
+            return;
 
         if (service.getCurrentUser() == null) {
             exerciseWorkloadsListView.setItems(FXCollections.observableArrayList("Log in to view exercise history."));
             sessionWorkloadsListView.setItems(FXCollections.observableArrayList("Log in to view session history."));
             return;
         }
-        
+
         ObservableList<String> exercises = FXCollections.observableArrayList();
         ObservableList<String> sessions = FXCollections.observableArrayList();
         Map<LocalDate, Double> dailyWorkloads = new LinkedHashMap<>();
         Map<LocalDate, Integer> dailySessionCounts = new LinkedHashMap<>();
-        
+
         for (WorkoutSession session : service.getSessions()) {
             for (Exercise exercise : session.getExercises()) {
                 double exerciseTotalWorkload = 0;
@@ -188,23 +200,22 @@ public class DashboardController {
 
         LocalDate today = LocalDate.now();
         sessions.add(buildDailyWorkloadItem(
-            today,
-            dailyWorkloads.getOrDefault(today, 0.0),
-            dailySessionCounts.getOrDefault(today, 0),
-            true
-        ));
+                today,
+                dailyWorkloads.getOrDefault(today, 0.0),
+                dailySessionCounts.getOrDefault(today, 0),
+                true));
         dailyWorkloads.entrySet().stream()
-            .filter(entry -> !entry.getKey().equals(today))
-            .sorted(Map.Entry.<LocalDate, Double>comparingByKey(Comparator.reverseOrder()))
-            .forEach(entry -> sessions.add(buildDailyWorkloadItem(
-                entry.getKey(),
-                entry.getValue(),
-                dailySessionCounts.getOrDefault(entry.getKey(), 0),
-                false
-            )));
+                .filter(entry -> !entry.getKey().equals(today))
+                .sorted(Map.Entry.<LocalDate, Double>comparingByKey(Comparator.reverseOrder()))
+                .forEach(entry -> sessions.add(buildDailyWorkloadItem(
+                        entry.getKey(),
+                        entry.getValue(),
+                        dailySessionCounts.getOrDefault(entry.getKey(), 0),
+                        false)));
 
-        if (exercises.isEmpty()) exercises.add("No past exercises found.");
-        
+        if (exercises.isEmpty())
+            exercises.add("No past exercises found.");
+
         exerciseWorkloadsListView.setItems(exercises);
         sessionWorkloadsListView.setItems(sessions);
     }
@@ -212,7 +223,7 @@ public class DashboardController {
     private String buildDailyWorkloadItem(LocalDate date, double totalWorkload, int sessionCount, boolean today) {
         String title = today ? "TODAY • " + SHORT_DATE_FORMATTER.format(date) : DATE_FORMATTER.format(date);
         return title
-            + "\nDaily total: " + String.format("%.1f", totalWorkload)
-            + "\nSessions: " + sessionCount;
+                + "\nDaily total: " + String.format("%.1f", totalWorkload)
+                + "\nSessions: " + sessionCount;
     }
 }

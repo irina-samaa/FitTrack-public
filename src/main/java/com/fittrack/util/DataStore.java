@@ -124,14 +124,10 @@ public class DataStore {
         }
         reminderService = new ReminderService();
         for (Reminder reminder : loadedUserData.reminders()) {
-            reminderService.scheduleReminder(
-                currentUser,
-                reminder.getLabel(),
-                reminder.getScheduledTime(),
-                reminder.getRepeatIntervalDays(),
-                reminder.getNote()
-            );
+            reminderService.loadReminder(currentUser, reminder);
         }
+        reminderService.syncRemindersFromLoggedHistory(currentUser, sessions);
+        saveCurrentUserReminders();
     }
 
     private void ensureDefaultWorkoutDraft() {

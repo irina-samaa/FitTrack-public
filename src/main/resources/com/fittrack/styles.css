@@ -122,6 +122,12 @@
     -fx-padding: 16;
 }
 
+.chart-title-label {
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #FFD2BF;
+}
+
 .hero-card {
     -fx-background-color: linear-gradient(to right, #25120a, #121a1d);
     -fx-border-color: #3A2A20;
@@ -470,9 +476,24 @@
     -fx-padding: 0;
 }
 
+.dark-combo .text-field,
+.dark-combo:editable .text-field {
+    -fx-background-color: #111111;
+    -fx-text-fill: #FFFFFF;
+    -fx-prompt-text-fill: #555555;
+    -fx-border-color: transparent;
+    -fx-background-radius: 6px 0 0 6px;
+    -fx-padding: 8 12;
+}
+
 .dark-combo:focused,
 .dark-combo:showing {
     -fx-border-color: #FF4500;
+    -fx-background-color: #1A0800;
+}
+
+.dark-combo:focused .text-field,
+.dark-combo:showing .text-field {
     -fx-background-color: #1A0800;
 }
 

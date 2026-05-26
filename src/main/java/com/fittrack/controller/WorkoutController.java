@@ -20,6 +20,7 @@ import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
 
 import java.time.LocalDate;
+import java.util.Locale;
 
 public class WorkoutController {
     @FXML private ListView<String> bodyPartListView;
@@ -102,7 +103,7 @@ public class WorkoutController {
             return;
         }
 
-        selectedBodyPartLabel.setText("Exercises - " + bodyPartName);
+        selectedBodyPartLabel.setText("EXERCISES - " + bodyPartName.toLowerCase(Locale.ROOT));
         for (Exercise exercise : selectedBodyPart.getExercises()) {
             exerciseNames.add(buildExerciseDisplayName(exercise));
         }

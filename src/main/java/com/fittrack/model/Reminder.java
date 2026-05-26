@@ -6,52 +6,48 @@ import java.time.format.DateTimeFormatter;
 public class Reminder implements Comparable<Reminder> {
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 
-    private final String label;
+    private final String bodyPartName;
     private final LocalDateTime scheduledTime;
-    private final Integer repeatIntervalDays;
-    private final String note;
+    private final int intervalDays;
 
-    public Reminder(String label, LocalDateTime scheduledTime, Integer repeatIntervalDays) {
-        this(label, scheduledTime, repeatIntervalDays, null);
-    }
-
-    public Reminder(String label, LocalDateTime scheduledTime, Integer repeatIntervalDays, String note) {
-        this.label = label;
+    public Reminder(String bodyPartName, LocalDateTime scheduledTime, int intervalDays) {
+        if (bodyPartName == null || bodyPartName.isBlank()) {
+            throw new IllegalArgumentException("Body part name cannot be blank.");
+        }
+        if (scheduledTime == null) {
+            throw new IllegalArgumentException("Scheduled time cannot be null.");
+        }
+        if (intervalDays <= 0) {
+            throw new IllegalArgumentException("Interval days must be greater than 0.");
+        }
+        this.bodyPartName = bodyPartName.trim();
         this.scheduledTime = scheduledTime;
-        this.repeatIntervalDays = repeatIntervalDays;
-        this.note = (note == null || note.isBlank()) ? null : note.trim();
+        this.intervalDays = intervalDays;
     }
 
-    public String getLabel() {
-        return label;
+    public String getBodyPartName() {
+        return bodyPartName;
     }
 
     public LocalDateTime getScheduledTime() {
         return scheduledTime;
     }
 
-    public Integer getRepeatIntervalDays() {
-        return repeatIntervalDays;
-    }
-
-    public String getNote() {
-        return note;
+    public int getIntervalDays() {
+        return intervalDays;
     }
 
     @Override
     public int compareTo(Reminder other) {
-        return scheduledTime.compareTo(other.scheduledTime);
+        int timeComparison = scheduledTime.compareTo(other.scheduledTime);
+        if (timeComparison != 0) {
+            return timeComparison;
+        }
+        return bodyPartName.compareToIgnoreCase(other.bodyPartName);
     }
 
     @Override
     public String toString() {
-        if (repeatIntervalDays != null) {
-            return note == null
-                ? label + " @ " + scheduledTime.format(FORMATTER) + " (Repeats every " + repeatIntervalDays + " days)"
-                : label + " @ " + scheduledTime.format(FORMATTER) + " (Repeats every " + repeatIntervalDays + " days) | Note: " + note;
-        }
-        return note == null
-            ? label + " @ " + scheduledTime.format(FORMATTER)
-            : label + " @ " + scheduledTime.format(FORMATTER) + " | Note: " + note;
+        return bodyPartName + " @ " + scheduledTime.format(FORMATTER) + " (after " + intervalDays + " days)";
     }
 }
