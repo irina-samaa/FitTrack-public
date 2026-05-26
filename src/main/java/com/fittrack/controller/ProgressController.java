@@ -1,6 +1,5 @@
 package com.fittrack.controller;
 
-import com.fittrack.model.WorkoutSession;
 import com.fittrack.service.FitnessTrackerService;
 import javafx.fxml.FXML;
 import javafx.scene.chart.LineChart;
@@ -8,15 +7,9 @@ import javafx.scene.chart.XYChart;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Map;
-import java.util.TreeMap;
 
 public class ProgressController {
-    private static final DateTimeFormatter CHART_DATE_FORMATTER = DateTimeFormatter.ofPattern("MMM d");
-
     @FXML private LineChart<String, Number> weightChart;
     @FXML private LineChart<String, Number> workloadChart;
     @FXML private ComboBox<Integer> windowComboBox;
@@ -68,22 +61,20 @@ public class ProgressController {
     }
 
     private void refreshWorkloadChart() {
-        Map<LocalDate, Double> dailyWorkloads = new TreeMap<>();
-        for (WorkoutSession session : service.getSessions()) {
-            dailyWorkloads.merge(LocalDate.parse(session.getDate()), session.getTotalWorkload(), Double::sum);
-        }
-        if (dailyWorkloads.isEmpty()) {
+        ArrayList<String> labels = service.getWorkloadProgressLabels();
+        ArrayList<Double> workloads = service.getDailyWorkloads();
+        if (workloads.isEmpty()) {
             averageWorkloadLabel.setText("No data");
             return;
         }
 
         XYChart.Series<String, Number> workloadSeries = new XYChart.Series<>();
         workloadSeries.setName("Daily Workload");
-        for (Map.Entry<LocalDate, Double> entry : dailyWorkloads.entrySet()) {
-            workloadSeries.getData().add(new XYChart.Data<>(CHART_DATE_FORMATTER.format(entry.getKey()), entry.getValue()));
+        for (int i = 0; i < workloads.size(); i++) {
+            workloadSeries.getData().add(new XYChart.Data<>(labels.get(i), workloads.get(i)));
         }
         workloadChart.getData().add(workloadSeries);
-        updateAverageWorkloadLabel(dailyWorkloads);
+        averageWorkloadLabel.setText(String.format("%.1f", service.getAverageWorkload()));
     }
 
     private void updateAverageWeightLabel(ArrayList<Double> weights) {
@@ -96,11 +87,4 @@ public class ProgressController {
         averageWeightLabel.setText(String.format("%.1f kg", sum / weights.size()));
     }
 
-    private void updateAverageWorkloadLabel(Map<LocalDate, Double> dailyWorkloads) {
-        double sum = 0;
-        for (double workload : dailyWorkloads.values()) {
-            sum += workload;
-        }
-        averageWorkloadLabel.setText(String.format("%.1f", sum / dailyWorkloads.size()));
-    }
 }

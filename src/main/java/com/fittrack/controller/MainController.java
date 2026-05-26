@@ -67,9 +67,4 @@ public class MainController {
             System.out.println("Logout error: " + e.getMessage());
         }
     }
-
-    @FXML
-    private void openSettings() {
-        System.out.println("TODO: Open Settings dialog");
-    }
 }

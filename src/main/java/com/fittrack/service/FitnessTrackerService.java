@@ -5,7 +5,6 @@ import com.fittrack.model.Exercise;
 import com.fittrack.model.ExerciseType;
 import com.fittrack.model.HealthMetrics;
 import com.fittrack.model.ProgressTracker;
-import com.fittrack.model.Reminder;
 import com.fittrack.model.SetRecord;
 import com.fittrack.model.User;
 import com.fittrack.model.WorkoutSession;
@@ -96,7 +95,7 @@ public class FitnessTrackerService {
     }
 
     public WorkoutSession startWorkoutSession(String sessionName) {
-        User currentUser = requireCurrentUser();
+        requireCurrentUser();
         String resolvedSessionName = (sessionName == null || sessionName.isBlank())
             ? "Workout - " + LocalDate.now()
             : sessionName.trim();
@@ -120,7 +119,7 @@ public class FitnessTrackerService {
             exercise.clearSets();
         }
 
-        dataStore.getReminderService().logBodyParts(currentUser, loggedBodyPartNames);
+        dataStore.getReminderService().logBodyParts(dataStore.getBodyParts(), loggedBodyPartNames);
 
         dataStore.saveCurrentUserSessions();
         dataStore.saveCurrentUserWorkoutDraft();
@@ -168,34 +167,49 @@ public class FitnessTrackerService {
         return progressTracker.getLabels(requireCurrentUser());
     }
 
+    public ArrayList<String> getWorkloadProgressLabels() {
+        requireCurrentUser();
+        return progressTracker.getWorkloadLabels(dataStore.getSessions());
+    }
+
+    public ArrayList<Double> getDailyWorkloads() {
+        requireCurrentUser();
+        return progressTracker.getDailyWorkloads(dataStore.getSessions());
+    }
+
+    public double getAverageWorkload() {
+        requireCurrentUser();
+        return progressTracker.getAverageWorkload(dataStore.getSessions());
+    }
+
+    public ArrayList<ProgressTracker.DailyWorkload> getDailyWorkloadSummaries(LocalDate prioritizedDate) {
+        requireCurrentUser();
+        return progressTracker.getDailyWorkloadSummaries(dataStore.getSessions(), prioritizedDate);
+    }
+
     public int getDefaultReminderDays() {
         return com.fittrack.model.ReminderService.DEFAULT_INTERVAL_DAYS;
     }
 
     public void updateBodyPartReminderDays(String bodyPartName, int days) {
-        User user = requireCurrentUser();
+        requireCurrentUser();
         BodyPart bodyPart = requireBodyPart(bodyPartName);
-        boolean updated = dataStore.getReminderService().updateBodyPartReminderDays(user, bodyPart.getName(), days, dataStore.getSessions());
+        boolean updated = dataStore.getReminderService().updateBodyPartReminderDays(bodyPart, days, dataStore.getSessions());
         if (!updated) {
             throw new IllegalStateException("Log this body part once before changing its reminder.");
         }
         dataStore.saveCurrentUserReminders();
     }
 
-    public Reminder getNextReminder() {
-        return dataStore.getReminderService().getNextReminder(requireCurrentUser());
+    public BodyPart getNextReminderBodyPart() {
+        requireCurrentUser();
+        return dataStore.getReminderService().getNextReminderBodyPart(dataStore.getBodyParts());
     }
 
-    public ArrayList<Reminder> getAllReminders() {
-        return dataStore.getReminderService().getAllReminders(requireCurrentUser());
+    public ArrayList<BodyPart> getBodyPartsWithReminders() {
+        requireCurrentUser();
+        return dataStore.getReminderService().getBodyPartsWithReminders(dataStore.getBodyParts());
     }
-
-
-
-    public List<SetRecord> getSets(String bodyPartName, String exerciseName) {
-        return requireExercise(bodyPartName, exerciseName).getSets();
-    }
-
     private User requireCurrentUser() {
         User user = dataStore.getCurrentUser();
         if (user == null) {

@@ -12,7 +12,6 @@ public class User {
     private double height;
     private final List<Double> weightHistory = new ArrayList<>();
     private final List<LocalDate> weightHistoryDates = new ArrayList<>();
-    private final List<WorkoutSession> workoutHistory = new ArrayList<>();
 
     public User(String username, String password, double weight, double height) {
         this.username = username;
@@ -23,10 +22,6 @@ public class User {
 
     public String getUsername() {
         return username;
-    }
-
-    public boolean matchesPassword(String rawPassword) {
-        return password.equals(rawPassword);
     }
 
     public void updateWeight(double newWeight) {
@@ -66,32 +61,12 @@ public class User {
         return height;
     }
 
-    public void addWorkoutSession(WorkoutSession workoutSession) {
-        if (workoutSession == null) {
-            throw new IllegalArgumentException("Workout session cannot be null.");
-        }
-        workoutHistory.add(workoutSession);
-    }
-
-    public List<WorkoutSession> getWorkoutHistory() {
-        return Collections.unmodifiableList(workoutHistory);
-    }
-
     public List<Double> getWeightHistory() {
         return Collections.unmodifiableList(weightHistory);
     }
 
     public List<LocalDate> getWeightHistoryDates() {
         return Collections.unmodifiableList(weightHistoryDates);
-    }
-
-    public void seedWeightHistory(List<Double> historicalWeights) {
-        ArrayList<LocalDate> generatedDates = new ArrayList<>();
-        LocalDate startDate = LocalDate.now().minusDays(Math.max(0, historicalWeights.size() - 1));
-        for (int i = 0; i < historicalWeights.size(); i++) {
-            generatedDates.add(startDate.plusDays(i));
-        }
-        seedWeightHistory(historicalWeights, generatedDates);
     }
 
     public void seedWeightHistory(List<Double> historicalWeights, List<LocalDate> historicalDates) {

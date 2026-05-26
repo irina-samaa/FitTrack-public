@@ -2,7 +2,6 @@ package com.fittrack.util;
 
 import com.fittrack.model.BodyPart;
 import com.fittrack.model.ExerciseType;
-import com.fittrack.model.Reminder;
 import com.fittrack.model.ReminderService;
 import com.fittrack.model.User;
 import com.fittrack.model.WorkoutSession;
@@ -85,9 +84,6 @@ public class DataStore {
 
     public void addSession(WorkoutSession session) {
         sessions.add(session);
-        if (currentUser != null) {
-            currentUser.addWorkoutSession(session);
-        }
     }
 
     public ReminderService getReminderService() {
@@ -109,7 +105,7 @@ public class DataStore {
     }
 
     public void saveCurrentUserReminders() {
-        repository.saveReminders(requireCurrentUser().getUsername(), getAllCurrentReminders());
+        repository.saveReminders(requireCurrentUser().getUsername(), bodyParts);
     }
 
     private void hydrateCurrentUser(SQLiteRepository.LoadedUserData loadedUserData) {
@@ -119,14 +115,17 @@ public class DataStore {
         ensureDefaultWorkoutDraft();
         sessions.clear();
         sessions.addAll(loadedUserData.sessions());
-        for (WorkoutSession session : sessions) {
-            currentUser.addWorkoutSession(session);
-        }
         reminderService = new ReminderService();
-        for (Reminder reminder : loadedUserData.reminders()) {
-            reminderService.loadReminder(currentUser, reminder);
+        for (SQLiteRepository.LoadedReminder loadedReminder : loadedUserData.reminders()) {
+            BodyPart bodyPart = findBodyPart(loadedReminder.bodyPartName());
+            if (bodyPart != null) {
+                bodyPart.scheduleReminder(
+                    loadedReminder.reminder().getScheduledTime(),
+                    loadedReminder.reminder().getIntervalDays()
+                );
+            }
         }
-        reminderService.syncRemindersFromLoggedHistory(currentUser, sessions);
+        reminderService.syncRemindersFromLoggedHistory(bodyParts, sessions);
         saveCurrentUserReminders();
     }
 
@@ -179,15 +178,22 @@ public class DataStore {
         return true;
     }
 
-    private ArrayList<Reminder> getAllCurrentReminders() {
-        User user = requireCurrentUser();
-        return reminderService.getAllReminders(user);
-    }
-
     private User requireCurrentUser() {
         if (currentUser == null) {
             throw new IllegalStateException("No user is logged in.");
         }
         return currentUser;
+    }
+
+    private BodyPart findBodyPart(String name) {
+        if (name == null) {
+            return null;
+        }
+        for (BodyPart bodyPart : bodyParts) {
+            if (bodyPart.getName().equalsIgnoreCase(name.trim())) {
+                return bodyPart;
+            }
+        }
+        return null;
     }
 }

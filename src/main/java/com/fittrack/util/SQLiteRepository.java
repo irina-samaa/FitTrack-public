@@ -74,7 +74,7 @@ public class SQLiteRepository {
             loadWeightHistory(connection, userId, user);
             ArrayList<BodyPart> bodyParts = loadBodyParts(connection, userId);
             ArrayList<WorkoutSession> sessions = loadSessions(connection, userId);
-            ArrayList<Reminder> reminders = loadReminders(connection, userId);
+            ArrayList<LoadedReminder> reminders = loadReminders(connection, userId);
             return new LoadedUserData(user, bodyParts, sessions, reminders);
         } catch (SQLException e) {
             throw new IllegalStateException("Failed to load user data.", e);
@@ -173,7 +173,7 @@ public class SQLiteRepository {
         }
     }
 
-    public void saveReminders(String username, List<Reminder> reminders) {
+    public void saveReminders(String username, List<BodyPart> bodyParts) {
         try (Connection connection = openConnection()) {
             connection.setAutoCommit(false);
             long userId = findUserId(connection, username);
@@ -181,9 +181,13 @@ public class SQLiteRepository {
 
             String sql = "INSERT INTO reminders(user_id, label, scheduled_time, repeat_interval_days, note) VALUES (?, ?, ?, ?, ?)";
             try (PreparedStatement statement = connection.prepareStatement(sql)) {
-                for (Reminder reminder : reminders) {
+                for (BodyPart bodyPart : bodyParts) {
+                    if (!bodyPart.hasReminder()) {
+                        continue;
+                    }
+                    Reminder reminder = bodyPart.getReminder();
                     statement.setLong(1, userId);
-                    statement.setString(2, reminder.getBodyPartName());
+                    statement.setString(2, bodyPart.getName());
                     statement.setString(3, reminder.getScheduledTime().toString());
                     statement.setInt(4, reminder.getIntervalDays());
                     statement.setNull(5, java.sql.Types.VARCHAR);
@@ -587,8 +591,8 @@ public class SQLiteRepository {
         return result;
     }
 
-    private ArrayList<Reminder> loadReminders(Connection connection, long userId) throws SQLException {
-        ArrayList<Reminder> result = new ArrayList<>();
+    private ArrayList<LoadedReminder> loadReminders(Connection connection, long userId) throws SQLException {
+        ArrayList<LoadedReminder> result = new ArrayList<>();
         String sql = "SELECT label, scheduled_time, repeat_interval_days FROM reminders WHERE user_id = ? ORDER BY scheduled_time ASC, id ASC";
         try (PreparedStatement statement = connection.prepareStatement(sql)) {
             statement.setLong(1, userId);
@@ -598,10 +602,12 @@ public class SQLiteRepository {
                     if (resultSet.wasNull() || intervalDays <= 0) {
                         continue;
                     }
-                    result.add(new Reminder(
+                    result.add(new LoadedReminder(
                         resultSet.getString("label"),
-                        LocalDateTime.parse(resultSet.getString("scheduled_time")),
-                        intervalDays
+                        new Reminder(
+                            LocalDateTime.parse(resultSet.getString("scheduled_time")),
+                            intervalDays
+                        )
                     ));
                 }
             }
@@ -785,11 +791,14 @@ public class SQLiteRepository {
     public record UserCredentials(String username, String password) {
     }
 
+    public record LoadedReminder(String bodyPartName, Reminder reminder) {
+    }
+
     public record LoadedUserData(
         User user,
         ArrayList<BodyPart> bodyParts,
         ArrayList<WorkoutSession> sessions,
-        ArrayList<Reminder> reminders
+        ArrayList<LoadedReminder> reminders
     ) {
     }
 }

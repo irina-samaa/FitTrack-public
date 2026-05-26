@@ -1,7 +1,6 @@
 package com.fittrack.controller;
 
 import com.fittrack.model.BodyPart;
-import com.fittrack.model.Reminder;
 import com.fittrack.service.FitnessTrackerService;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
@@ -20,13 +19,13 @@ public class ScheduleController {
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 
     @FXML
-    private TableView<Reminder> reminderTable;
+    private TableView<BodyPart> reminderTable;
     @FXML
-    private TableColumn<Reminder, String> bodyPartColumn;
+    private TableColumn<BodyPart, String> bodyPartColumn;
     @FXML
-    private TableColumn<Reminder, String> intervalColumn;
+    private TableColumn<BodyPart, String> intervalColumn;
     @FXML
-    private TableColumn<Reminder, String> timeColumn;
+    private TableColumn<BodyPart, String> timeColumn;
     @FXML
     private ComboBox<String> bodyPartComboBox;
     @FXML
@@ -35,14 +34,15 @@ public class ScheduleController {
     private Label nextReminderLabel;
 
     private final FitnessTrackerService service = FitnessTrackerService.getInstance();
-    private final ObservableList<Reminder> reminderList = FXCollections.observableArrayList();
+    private final ObservableList<BodyPart> reminderList = FXCollections.observableArrayList();
 
     @FXML
     private void initialize() {
-        bodyPartColumn.setCellValueFactory(cell -> new SimpleStringProperty(cell.getValue().getBodyPartName()));
-        intervalColumn.setCellValueFactory(cell -> new SimpleStringProperty(cell.getValue().getIntervalDays() + " days"));
+        bodyPartColumn.setCellValueFactory(cell -> new SimpleStringProperty(cell.getValue().getName()));
+        intervalColumn.setCellValueFactory(cell -> new SimpleStringProperty(
+            cell.getValue().getReminder().getIntervalDays() + " days"));
         timeColumn.setCellValueFactory(cell -> new SimpleStringProperty(
-            cell.getValue().getScheduledTime().format(FORMATTER)));
+            cell.getValue().getReminder().getScheduledTime().format(FORMATTER)));
         reminderTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
         reminderTable.setItems(reminderList);
 
@@ -62,11 +62,6 @@ public class ScheduleController {
             showAlert("Please choose a body part.");
             return;
         }
-        if (service.findBodyPart(bodyPartName) == null) {
-            showAlert("Body part not found: " + bodyPartName);
-            return;
-        }
-
         int days;
         String daysText = reminderDaysField.getText().trim();
         if (daysText.isEmpty()) {
@@ -107,14 +102,14 @@ public class ScheduleController {
             return;
         }
 
-        reminderList.setAll(service.getAllReminders());
-        Reminder next = service.getNextReminder();
+        reminderList.setAll(service.getBodyPartsWithReminders());
+        BodyPart next = service.getNextReminderBodyPart();
         if (next == null) {
             nextReminderLabel.setText("No body part reminders yet");
             return;
         }
         nextReminderLabel.setText(
-            "Next: " + next.getBodyPartName() + " - " + next.getScheduledTime().format(FORMATTER));
+            "Next: " + next.getName() + " - " + next.getReminder().getScheduledTime().format(FORMATTER));
     }
 
     private String getSelectedBodyPartName() {

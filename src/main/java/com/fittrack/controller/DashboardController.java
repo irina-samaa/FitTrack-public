@@ -1,9 +1,9 @@
 package com.fittrack.controller;
 
-import com.fittrack.model.Reminder;
+import com.fittrack.model.BodyPart;
 import com.fittrack.model.WorkoutSession;
 import com.fittrack.model.Exercise;
-import com.fittrack.model.SetRecord;
+import com.fittrack.model.ProgressTracker;
 import com.fittrack.service.FitnessTrackerService;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
@@ -19,9 +19,6 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.LinkedHashMap;
-import java.util.Map;
 
 public class DashboardController {
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
@@ -134,8 +131,8 @@ public class DashboardController {
             return;
         }
 
-        Reminder next = service.getNextReminder();
-        int reminderCount = service.getAllReminders().size();
+        BodyPart next = service.getNextReminderBodyPart();
+        int reminderCount = service.getBodyPartsWithReminders().size();
         upcomingCountLabel.setText(reminderCount + " upcoming reminder" + (reminderCount == 1 ? "" : "s"));
 
         if (next == null) {
@@ -144,8 +141,8 @@ public class DashboardController {
             return;
         }
 
-        reminderTitleLabel.setText(next.getBodyPartName());
-        reminderTimeLabel.setText(next.getScheduledTime().format(FORMATTER));
+        reminderTitleLabel.setText(next.getName());
+        reminderTimeLabel.setText(next.getReminder().getScheduledTime().format(FORMATTER));
     }
 
     private void configureWorkloadLists() {
@@ -181,37 +178,21 @@ public class DashboardController {
 
         ObservableList<String> exercises = FXCollections.observableArrayList();
         ObservableList<String> sessions = FXCollections.observableArrayList();
-        Map<LocalDate, Double> dailyWorkloads = new LinkedHashMap<>();
-        Map<LocalDate, Integer> dailySessionCounts = new LinkedHashMap<>();
 
         for (WorkoutSession session : service.getSessions()) {
             for (Exercise exercise : session.getExercises()) {
-                double exerciseTotalWorkload = 0;
-                for (SetRecord set : exercise.getSets()) {
-                    exerciseTotalWorkload += set.getWorkloadScore();
-                }
-                exercises.add(exercise.getName() + " | Workload: " + String.format("%.1f", exerciseTotalWorkload));
+                exercises.add(exercise.getName() + " | Workload: " + String.format("%.1f", exercise.getTotalVolume()));
             }
-
-            LocalDate sessionDate = LocalDate.parse(session.getDate());
-            dailyWorkloads.merge(sessionDate, session.getTotalWorkload(), Double::sum);
-            dailySessionCounts.merge(sessionDate, 1, Integer::sum);
         }
 
         LocalDate today = LocalDate.now();
-        sessions.add(buildDailyWorkloadItem(
-                today,
-                dailyWorkloads.getOrDefault(today, 0.0),
-                dailySessionCounts.getOrDefault(today, 0),
-                true));
-        dailyWorkloads.entrySet().stream()
-                .filter(entry -> !entry.getKey().equals(today))
-                .sorted(Map.Entry.<LocalDate, Double>comparingByKey(Comparator.reverseOrder()))
-                .forEach(entry -> sessions.add(buildDailyWorkloadItem(
-                        entry.getKey(),
-                        entry.getValue(),
-                        dailySessionCounts.getOrDefault(entry.getKey(), 0),
-                        false)));
+        for (ProgressTracker.DailyWorkload dailyWorkload : service.getDailyWorkloadSummaries(today)) {
+            sessions.add(buildDailyWorkloadItem(
+                    dailyWorkload.date(),
+                    dailyWorkload.totalWorkload(),
+                    dailyWorkload.sessionCount(),
+                    dailyWorkload.date().equals(today)));
+        }
 
         if (exercises.isEmpty())
             exercises.add("No past exercises found.");

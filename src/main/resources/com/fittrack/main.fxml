@@ -23,9 +23,6 @@
             <!-- Username -->
             <Label fx:id="usernameLabel" styleClass="username-label" />
 
-            <!-- Settings button -->
-            <Button text="⚙" styleClass="icon-button" onAction="#openSettings" />
-
             <!-- Logout button -->
             <Button text="🚪 Logout" styleClass="danger-button" onAction="#handleLogout" />
         </HBox>

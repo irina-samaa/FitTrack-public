@@ -230,9 +230,6 @@ public class WorkoutController {
         refreshSessionWorkloadLabel();
         setTableView.refresh();
         setTableView.getSelectionModel().clearSelection();
-        if (selectedExercise.getSets().isEmpty()) {
-            refreshSessionWorkloadLabel();
-        }
     }
 
     private void updateMetricInputs(ExerciseType type) {

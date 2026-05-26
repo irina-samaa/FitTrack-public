@@ -46,15 +46,6 @@ public class WorkoutSession {
         return total;
     }
 
-    public Exercise findExercise(String name) {
-        for (Exercise exercise : exercises) {
-            if (exercise.getName().equalsIgnoreCase(name)) {
-                return exercise;
-            }
-        }
-        return null;
-    }
-
     public String getSummary() {
         return String.format("%s on %s with %d exercises", sessionName, date, exercises.size());
     }

@@ -1,5 +1,6 @@
 package com.fittrack.model;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -7,6 +8,7 @@ import java.util.List;
 public class BodyPart {
     private final String name;
     private final List<Exercise> exercises = new ArrayList<>();
+    private Reminder reminder;
 
     public BodyPart(String name) {
         if (name == null || name.isBlank()) {
@@ -26,12 +28,20 @@ public class BodyPart {
         exercises.add(exercise);
     }
 
-    public void removeExercise(Exercise exercise) {
-        exercises.remove(exercise);
-    }
-
     public List<Exercise> getExercises() {
         return Collections.unmodifiableList(exercises);
+    }
+
+    public Reminder getReminder() {
+        return reminder;
+    }
+
+    public boolean hasReminder() {
+        return reminder != null;
+    }
+
+    public void scheduleReminder(LocalDateTime scheduledTime, int intervalDays) {
+        reminder = new Reminder(scheduledTime, intervalDays);
     }
 
     public Exercise findExercise(String exerciseName) {
