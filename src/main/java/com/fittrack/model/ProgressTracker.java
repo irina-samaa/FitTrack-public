@@ -1,9 +1,12 @@
 package com.fittrack.model;
 
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
 public class ProgressTracker {
+    private static final DateTimeFormatter LABEL_FORMATTER = DateTimeFormatter.ofPattern("MMM d");
+
     public ArrayList<Double> generateWeightGraph(User user) {
         return getMovingAverage(user, 3);
     }
@@ -28,8 +31,8 @@ public class ProgressTracker {
 
     public ArrayList<String> getLabels(User user) {
         ArrayList<String> labels = new ArrayList<>();
-        for (int i = 0; i < user.getWeightHistory().size(); i++) {
-            labels.add("Entry " + (i + 1));
+        for (var date : user.getWeightHistoryDates()) {
+            labels.add(LABEL_FORMATTER.format(date));
         }
         return labels;
     }

@@ -2,100 +2,78 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
-<!--
-  health.fxml - Health metrics and BMI screen.
-  Controller: HealthController.java
--->
 <VBox xmlns:fx="http://javafx.com/fxml"
       fx:controller="com.fittrack.controller.HealthController"
-      spacing="20"
-      style="-fx-padding: 32; -fx-background-color: #0F0F0F;">
+      spacing="14"
+      style="-fx-padding: 24; -fx-background-color: #0F0F0F;">
 
-    <Label text="Health Metrics" styleClass="screen-title" />
-
-    <!-- Display the current values -->
-    <!--
-      BACKEND CALL: HealthMetrics.getWeight() + getHeight()
-    -->
-    <FlowPane hgap="24" vgap="12">
+    <HBox alignment="CENTER_LEFT" spacing="18">
+        <Label text="Health Metrics" styleClass="screen-title" />
+        <Region HBox.hgrow="ALWAYS" />
         <Label fx:id="currentWeightLabel" styleClass="subtitle-text" />
         <Label fx:id="currentHeightLabel" styleClass="subtitle-text" />
-    </FlowPane>
+    </HBox>
 
-    <!-- ===== INPUT FORM ===== -->
-    <VBox styleClass="card" spacing="14">
+    <VBox styleClass="card" spacing="12" maxHeight="130">
         <Label text="UPDATE MEASUREMENTS" styleClass="card-title-accent" />
+        <GridPane hgap="14" vgap="8">
+            <columnConstraints>
+                <ColumnConstraints percentWidth="38" />
+                <ColumnConstraints percentWidth="38" />
+                <ColumnConstraints percentWidth="24" />
+            </columnConstraints>
 
-        <FlowPane hgap="16" vgap="12">
+            <Label text="WEIGHT (kg)" styleClass="field-label" GridPane.columnIndex="0" GridPane.rowIndex="0" />
+            <Label text="HEIGHT (cm)" styleClass="field-label" GridPane.columnIndex="1" GridPane.rowIndex="0" />
 
-            <!-- Weight Input -->
-            <VBox spacing="6" minWidth="220" prefWidth="280">
-                <Label text="WEIGHT (kg)" styleClass="field-label" />
-                <TextField fx:id="weightField"
-                           promptText="e.g. 70.5"
-                           styleClass="dark-input" />
-            </VBox>
-
-            <!-- Height Input -->
-            <VBox spacing="6" minWidth="220" prefWidth="280">
-                <Label text="HEIGHT (cm)" styleClass="field-label" />
-                <TextField fx:id="heightField"
-                           promptText="e.g. 175"
-                           styleClass="dark-input" />
-            </VBox>
-
-            <!--
-              BACKEND CALL: HealthMetrics.updateWeight(kg) + updateHeight(cm)
-              Note: updateWeight() appends to weightHistory.
-            -->
+            <TextField fx:id="weightField"
+                       promptText="Weight"
+                       styleClass="dark-input"
+                       maxWidth="Infinity"
+                       GridPane.columnIndex="0"
+                       GridPane.rowIndex="1" />
+            <TextField fx:id="heightField"
+                       promptText="Height"
+                       styleClass="dark-input"
+                       maxWidth="Infinity"
+                       GridPane.columnIndex="1"
+                       GridPane.rowIndex="1" />
             <Button text="Update"
                     styleClass="primary-button"
+                    maxWidth="Infinity"
                     onAction="#handleUpdate"
-                    style="-fx-padding: 8 24;" />
-        </FlowPane>
+                    GridPane.columnIndex="2"
+                    GridPane.rowIndex="1" />
+        </GridPane>
     </VBox>
 
-    <!-- ===== BMI RESULT ===== -->
-    <FlowPane hgap="20" vgap="20">
-
-        <!-- BMI number card (large, bold) -->
-        <VBox styleClass="card" spacing="8" alignment="CENTER"
-              minWidth="180" prefWidth="220">
+    <HBox spacing="14" fillHeight="true" VBox.vgrow="ALWAYS">
+        <VBox styleClass="card" spacing="10" alignment="CENTER"
+              minWidth="220" prefWidth="260" maxHeight="Infinity">
             <Label text="BMI" styleClass="card-title-accent" />
-            <!--
-              BACKEND CALL: HealthMetrics.calculateBMI()
-            -->
             <Label fx:id="bmiResultLabel"
                    styleClass="bmi-number"
-                   style="-fx-font-size: 56; -fx-font-weight: bold; -fx-text-fill: #FF4500;" />
-
-            <!--
-              BACKEND CALL: HealthMetrics.getBMICategory()
-              Color is set by HealthController.calculateAndDisplay()
-            -->
+                   style="-fx-font-size: 52; -fx-font-weight: bold; -fx-text-fill: #FF4500;" />
             <Label fx:id="bmiCategoryBadge" text="-" />
         </VBox>
 
-        <!-- Recommendation Card -->
-        <VBox styleClass="card" spacing="8" minWidth="320" prefWidth="520">
+        <VBox styleClass="card" spacing="8" HBox.hgrow="ALWAYS" maxWidth="Infinity">
             <Label text="RECOMMENDATION" styleClass="card-title-accent" />
-            <!--
-              BACKEND CALL: HealthMetrics.getHealthRecommendation()
-            -->
             <Label fx:id="recommendationLabel"
                    styleClass="body-text"
                    wrapText="true"
                    style="-fx-font-size: 15; -fx-text-fill: #AAAAAA;" />
-
-            <!-- BMI Reference Table (hardcoded) -->
             <Separator />
-            <Label text="BMI Categories:" styleClass="field-label" />
-            <Label text="&lt; 18.5 -> Underweight" style="-fx-text-fill: #00E5FF; -fx-font-size: 12;" />
-            <Label text="18.5 - 24.9 -> Normal" style="-fx-text-fill: #39FF14; -fx-font-size: 12;" />
-            <Label text="25 - 29.9 -> Overweight" style="-fx-text-fill: #FFD700; -fx-font-size: 12;" />
-            <Label text="&gt;= 30 -> Obese" style="-fx-text-fill: #FF4500; -fx-font-size: 12;" />
+            <GridPane hgap="18" vgap="8">
+                <columnConstraints>
+                    <ColumnConstraints percentWidth="50" />
+                    <ColumnConstraints percentWidth="50" />
+                </columnConstraints>
+                <Label text="&lt; 18.5 -> Underweight" style="-fx-text-fill: #00E5FF; -fx-font-size: 12;" GridPane.columnIndex="0" GridPane.rowIndex="0" />
+                <Label text="18.5 - 24.9 -> Normal" style="-fx-text-fill: #39FF14; -fx-font-size: 12;" GridPane.columnIndex="1" GridPane.rowIndex="0" />
+                <Label text="25 - 29.9 -> Overweight" style="-fx-text-fill: #FFD700; -fx-font-size: 12;" GridPane.columnIndex="0" GridPane.rowIndex="1" />
+                <Label text="&gt;= 30 -> Obese" style="-fx-text-fill: #FF4500; -fx-font-size: 12;" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+            </GridPane>
         </VBox>
-
-    </FlowPane>
-
+    </HBox>
 </VBox>

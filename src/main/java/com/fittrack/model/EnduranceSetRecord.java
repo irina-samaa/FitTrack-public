@@ -40,7 +40,7 @@ public class EnduranceSetRecord extends SetRecord {
 
     @Override
     public double getWorkloadScore() {
-        return durationMinutes * heartRate;
+        return (durationMinutes * heartRate) / 10.0;
     }
 
     @Override

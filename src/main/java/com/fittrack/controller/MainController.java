@@ -1,6 +1,5 @@
 package com.fittrack.controller;
 
-import com.fittrack.Main;
 import com.fittrack.service.FitnessTrackerService;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -61,9 +60,9 @@ public class MainController {
     @FXML
     private void handleLogout() {
         try {
+            FitnessTrackerService.getInstance().logout();
             Stage stage = (Stage) mainPane.getScene().getWindow();
-            stage.hide();
-            Main.showLoginPopup(stage);
+            stage.close();
         } catch (Exception e) {
             System.out.println("Logout error: " + e.getMessage());
         }

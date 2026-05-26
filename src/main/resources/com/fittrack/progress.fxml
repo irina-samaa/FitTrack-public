@@ -3,84 +3,61 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
-<!--
-  progress.fxml - Weight progress chart screen.
-  Controller: ProgressController.java
--->
 <VBox xmlns:fx="http://javafx.com/fxml"
       fx:controller="com.fittrack.controller.ProgressController"
-      spacing="16"
-      style="-fx-padding: 24; -fx-background-color: #0F0F0F;">
+      spacing="12"
+      style="-fx-padding: 20; -fx-background-color: #0F0F0F;">
 
-    <Label text="Progress" styleClass="screen-title" />
-
-    <!-- Toolbar: ComboBox for the window size and a Refresh button -->
-    <HBox spacing="12" alignment="CENTER_LEFT" styleClass="card">
-        <Label text="MOVING AVERAGE WINDOW:" styleClass="field-label" />
-
-        <!--
-          BACKEND CALL: ProgressTracker.getMovingAverage(window)
-          The ComboBox contains [2, 3, 5] - changing the window refreshes the chart
-        -->
-        <ComboBox fx:id="windowComboBox" styleClass="dark-combo" />
-
-        <Label text="entries" styleClass="subtitle-text" />
-
+    <HBox spacing="12" alignment="CENTER_LEFT">
+        <Label text="Progress" styleClass="screen-title" />
         <Region HBox.hgrow="ALWAYS" />
-
-        <Button text="↺ Refresh" styleClass="accent-button"
+        <Label text="MOVING AVG:" styleClass="field-label" />
+        <ComboBox fx:id="windowComboBox" styleClass="dark-combo" prefWidth="86" />
+        <Button text="Refresh" styleClass="accent-button"
                 onAction="#refreshChart" />
     </HBox>
 
-    <!-- ===== LINE CHART ===== -->
-    <!--
-      2 Series:
-      Series 1 "Weight (kg)" - BACKEND CALL: HealthMetrics.getWeightHistory()
-      Series 2 "Moving Avg"  - BACKEND CALL: ProgressTracker.getMovingAverage(window)
-      X-axis labels          - BACKEND CALL: ProgressTracker.getLabels()
-    -->
-    <LineChart fx:id="weightChart"
-               styleClass="dark-chart"
-               VBox.vgrow="ALWAYS"
-               animated="true"
-               createSymbols="true">
+    <HBox spacing="14" fillHeight="true" VBox.vgrow="ALWAYS">
+        <VBox spacing="10" maxWidth="Infinity" prefWidth="0" HBox.hgrow="ALWAYS">
+            <LineChart fx:id="weightChart"
+                       styleClass="dark-chart"
+                       animated="false"
+                       createSymbols="true"
+                       VBox.vgrow="ALWAYS">
+                <xAxis>
+                    <CategoryAxis label="Date" />
+                </xAxis>
+                <yAxis>
+                    <NumberAxis label="Weight (kg)" autoRanging="true" />
+                </yAxis>
+            </LineChart>
 
-        <xAxis>
-            <CategoryAxis label="Time" />
-        </xAxis>
-        <yAxis>
-            <NumberAxis label="Weight (kg)" autoRanging="true" />
-        </yAxis>
-
-    </LineChart>
-
-    <!-- ===== STAT CARDS ===== -->
-    <FlowPane hgap="12" vgap="12">
-
-        <VBox styleClass="card" spacing="4" alignment="CENTER" minWidth="150" prefWidth="180">
-            <Label text="MIN" styleClass="field-label" />
-            <Label fx:id="minWeightLabel" styleClass="card-big-number"
-                   style="-fx-font-size: 20;" />
+            <VBox styleClass="card" spacing="4" alignment="CENTER" maxWidth="Infinity">
+                <Label text="AVERAGE WEIGHT" styleClass="field-label" />
+                <Label fx:id="averageWeightLabel" styleClass="card-big-number"
+                       style="-fx-font-size: 22;" />
+            </VBox>
         </VBox>
 
-        <VBox styleClass="card" spacing="4" alignment="CENTER" minWidth="150" prefWidth="180">
-            <Label text="MAX" styleClass="field-label" />
-            <Label fx:id="maxWeightLabel" styleClass="card-big-number"
-                   style="-fx-font-size: 20;" />
+        <VBox spacing="10" maxWidth="Infinity" prefWidth="0" HBox.hgrow="ALWAYS">
+            <LineChart fx:id="workloadChart"
+                       styleClass="dark-chart"
+                       animated="false"
+                       createSymbols="true"
+                       VBox.vgrow="ALWAYS">
+                <xAxis>
+                    <CategoryAxis label="Date" />
+                </xAxis>
+                <yAxis>
+                    <NumberAxis label="Workload" autoRanging="true" />
+                </yAxis>
+            </LineChart>
+
+            <VBox styleClass="card" spacing="4" alignment="CENTER" maxWidth="Infinity">
+                <Label text="AVERAGE WORKLOAD" styleClass="field-label" />
+                <Label fx:id="averageWorkloadLabel" styleClass="card-big-number"
+                       style="-fx-font-size: 22;" />
+            </VBox>
         </VBox>
-
-        <VBox styleClass="card" spacing="4" alignment="CENTER" minWidth="150" prefWidth="180">
-            <Label text="AVG" styleClass="field-label" />
-            <Label fx:id="avgWeightLabel" styleClass="card-big-number"
-                   style="-fx-font-size: 20;" />
-        </VBox>
-
-        <VBox styleClass="card" spacing="4" alignment="CENTER" minWidth="150" prefWidth="180">
-            <Label text="ENTRIES" styleClass="field-label" />
-            <Label fx:id="totalEntriesLabel" styleClass="card-big-number"
-                   style="-fx-font-size: 20;" />
-        </VBox>
-
-    </FlowPane>
-
+    </HBox>
 </VBox>

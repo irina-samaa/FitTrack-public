@@ -40,6 +40,14 @@ public class FitnessTrackerService {
         return dataStore.authenticate(username, password);
     }
 
+    public boolean createAccount(String username, String password) {
+        return dataStore.createAccount(username, password);
+    }
+
+    public void logout() {
+        dataStore.logout();
+    }
+
     public User getCurrentUser() {
         return dataStore.getCurrentUser();
     }
@@ -65,7 +73,9 @@ public class FitnessTrackerService {
 
     public Exercise createExercise(String bodyPartName, String exerciseName, ExerciseType type) {
         BodyPart bodyPart = requireBodyPart(bodyPartName);
-        return bodyPart.createExercise(exerciseName, type);
+        Exercise exercise = bodyPart.createExercise(exerciseName, type);
+        dataStore.saveCurrentUserWorkoutDraft();
+        return exercise;
     }
 
     public Exercise findExercise(String bodyPartName, String exerciseName) {
@@ -75,11 +85,13 @@ public class FitnessTrackerService {
     public void addSet(String bodyPartName, String exerciseName, int firstMetric, double secondMetric) {
         Exercise exercise = requireExercise(bodyPartName, exerciseName);
         exercise.addSet(firstMetric, secondMetric);
+        dataStore.saveCurrentUserWorkoutDraft();
     }
 
     public void deleteSet(String bodyPartName, String exerciseName, SetRecord setRecord) {
         Exercise exercise = requireExercise(bodyPartName, exerciseName);
         exercise.removeSet(setRecord);
+        dataStore.saveCurrentUserWorkoutDraft();
     }
 
     public WorkoutSession startWorkoutSession(String sessionName) {
@@ -104,10 +116,13 @@ public class FitnessTrackerService {
         for (Exercise exercise : exercisesToClear) {
             exercise.clearSets();
         }
-        
+
         // Reset repeating reminders since a workout was completed
         dataStore.getReminderService().resetRepeatingReminders(currentUser);
-        
+
+        dataStore.saveCurrentUserSessions();
+        dataStore.saveCurrentUserWorkoutDraft();
+        dataStore.saveCurrentUserReminders();
         return session;
     }
 
@@ -119,6 +134,7 @@ public class FitnessTrackerService {
         User user = requireCurrentUser();
         user.updateWeight(weight);
         user.updateHeight(height);
+        dataStore.saveCurrentUserProfile();
     }
 
     public double calculateBMI() {
@@ -156,6 +172,7 @@ public class FitnessTrackerService {
 
     public void scheduleReminder(String label, LocalDateTime time, Integer repeatIntervalDays, String note) {
         dataStore.getReminderService().scheduleReminder(requireCurrentUser(), label, time, repeatIntervalDays, note);
+        dataStore.saveCurrentUserReminders();
     }
 
     public Reminder getNextReminder() {
@@ -163,7 +180,9 @@ public class FitnessTrackerService {
     }
 
     public Reminder removeNextReminder() {
-        return dataStore.getReminderService().removeNextReminder(requireCurrentUser());
+        Reminder reminder = dataStore.getReminderService().removeNextReminder(requireCurrentUser());
+        dataStore.saveCurrentUserReminders();
+        return reminder;
     }
 
     public ArrayList<Reminder> getAllReminders() {

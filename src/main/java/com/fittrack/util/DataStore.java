@@ -2,30 +2,28 @@ package com.fittrack.util;
 
 import com.fittrack.model.BodyPart;
 import com.fittrack.model.ExerciseType;
+import com.fittrack.model.Reminder;
 import com.fittrack.model.ReminderService;
 import com.fittrack.model.User;
 import com.fittrack.model.WorkoutSession;
 
-import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.List;
 
 public class DataStore {
+    private static final double DEFAULT_WEIGHT = 70.0;
+    private static final double DEFAULT_HEIGHT = 170.0;
+
     private static DataStore instance;
 
-    private final User registeredUser;
-    private User currentUser;
+    private final SQLiteRepository repository;
     private final ArrayList<BodyPart> bodyParts = new ArrayList<>();
     private final ArrayList<WorkoutSession> sessions = new ArrayList<>();
-    private final ReminderService reminderService = new ReminderService();
+
+    private User currentUser;
+    private ReminderService reminderService = new ReminderService();
 
     private DataStore() {
-        registeredUser = new User("admin", "1234", 70, 175);
-        registeredUser.seedWeightHistory(List.of(68.0, 69.0, 70.0, 70.5, 71.0, 70.0, 69.5));
-        seedBodyParts();
-        seedSessions();
-        seedReminders();
+        repository = new SQLiteRepository();
     }
 
     public static DataStore getInstance() {
@@ -36,19 +34,40 @@ public class DataStore {
     }
 
     public boolean authenticate(String username, String password) {
-        boolean valid = registeredUser.getUsername().equals(username) && registeredUser.matchesPassword(password);
-        if (valid) {
-            currentUser = registeredUser;
+        if (username == null || username.isBlank() || password == null || password.isBlank()) {
+            return false;
         }
-        return valid;
+
+        SQLiteRepository.UserCredentials credentials = repository.findUserCredentials(username.trim());
+        if (credentials == null || !credentials.password().equals(password)) {
+            return false;
+        }
+
+        hydrateCurrentUser(repository.loadUserData(credentials.username()));
+        return true;
+    }
+
+    public boolean createAccount(String username, String password) {
+        if (username == null || username.isBlank() || password == null || password.isBlank()) {
+            return false;
+        }
+
+        boolean created = repository.createUser(username.trim(), password, DEFAULT_WEIGHT, DEFAULT_HEIGHT);
+        if (!created) {
+            return false;
+        }
+        return authenticate(username.trim(), password);
+    }
+
+    public void logout() {
+        currentUser = null;
+        bodyParts.clear();
+        sessions.clear();
+        reminderService = new ReminderService();
     }
 
     public User getCurrentUser() {
         return currentUser;
-    }
-
-    public void setCurrentUser(User user) {
-        this.currentUser = user;
     }
 
     public ArrayList<BodyPart> getBodyParts() {
@@ -57,6 +76,7 @@ public class DataStore {
 
     public void addBodyPart(BodyPart bodyPart) {
         bodyParts.add(bodyPart);
+        saveCurrentUserWorkoutDraft();
     }
 
     public ArrayList<WorkoutSession> getSessions() {
@@ -74,40 +94,104 @@ public class DataStore {
         return reminderService;
     }
 
-    private void seedBodyParts() {
-        BodyPart chest = new BodyPart("Chest");
-        chest.createExercise("Bench Press", ExerciseType.STRENGTH).addSet(8, 60);
-        chest.createExercise("Push Up", ExerciseType.STRENGTH).addSet(20, 0);
-        chest.createExercise("Chest Fly", ExerciseType.STRENGTH).addSet(12, 15);
-
-        BodyPart legs = new BodyPart("Legs");
-        legs.createExercise("Squat", ExerciseType.STRENGTH).addSet(6, 90);
-        legs.createExercise("Treadmill Run", ExerciseType.CARDIO).addSet(20, 3.2);
-
-        BodyPart back = new BodyPart("Back");
-        back.createExercise("Deadlift", ExerciseType.STRENGTH).addSet(5, 100);
-        back.createExercise("Rowing Machine", ExerciseType.ENDURANCE).addSet(18, 145);
-
-        bodyParts.add(chest);
-        bodyParts.add(legs);
-        bodyParts.add(back);
+    public void saveCurrentUserProfile() {
+        User user = requireCurrentUser();
+        repository.saveUserProfile(user);
+        repository.saveWeightHistory(user);
     }
 
-    private void seedSessions() {
-        WorkoutSession session = new WorkoutSession(LocalDate.now().minusDays(1), "Upper Body Session");
+    public void saveCurrentUserWorkoutDraft() {
+        repository.saveWorkoutDraft(requireCurrentUser().getUsername(), bodyParts);
+    }
+
+    public void saveCurrentUserSessions() {
+        repository.saveSessions(requireCurrentUser().getUsername(), sessions);
+    }
+
+    public void saveCurrentUserReminders() {
+        repository.saveReminders(requireCurrentUser().getUsername(), getAllCurrentReminders());
+    }
+
+    private void hydrateCurrentUser(SQLiteRepository.LoadedUserData loadedUserData) {
+        currentUser = loadedUserData.user();
+        bodyParts.clear();
+        bodyParts.addAll(loadedUserData.bodyParts());
+        ensureDefaultWorkoutDraft();
+        sessions.clear();
+        sessions.addAll(loadedUserData.sessions());
+        for (WorkoutSession session : sessions) {
+            currentUser.addWorkoutSession(session);
+        }
+        reminderService = new ReminderService();
+        for (Reminder reminder : loadedUserData.reminders()) {
+            reminderService.scheduleReminder(
+                currentUser,
+                reminder.getLabel(),
+                reminder.getScheduledTime(),
+                reminder.getRepeatIntervalDays(),
+                reminder.getNote()
+            );
+        }
+    }
+
+    private void ensureDefaultWorkoutDraft() {
+        boolean changed = false;
+
+        BodyPart chest = findOrCreateBodyPart("Chest");
+        changed |= addDefaultExercise(chest, "Bench Press", ExerciseType.STRENGTH);
+        changed |= addDefaultExercise(chest, "Push Up", ExerciseType.STRENGTH);
+        changed |= addDefaultExercise(chest, "Chest Fly", ExerciseType.STRENGTH);
+
+        BodyPart back = findOrCreateBodyPart("Back");
+        changed |= addDefaultExercise(back, "Deadlift", ExerciseType.STRENGTH);
+        changed |= addDefaultExercise(back, "Dumbbell Row", ExerciseType.STRENGTH);
+        changed |= addDefaultExercise(back, "Rowing Machine", ExerciseType.ENDURANCE);
+
+        BodyPart legs = findOrCreateBodyPart("Legs");
+        changed |= addDefaultExercise(legs, "Squat", ExerciseType.STRENGTH);
+        changed |= addDefaultExercise(legs, "Lunge", ExerciseType.STRENGTH);
+        changed |= addDefaultExercise(legs, "Treadmill Run", ExerciseType.CARDIO);
+
+        BodyPart core = findOrCreateBodyPart("Core");
+        changed |= addDefaultExercise(core, "Plank Hold", ExerciseType.ENDURANCE);
+        changed |= addDefaultExercise(core, "Crunch", ExerciseType.STRENGTH);
+        changed |= addDefaultExercise(core, "Cycling", ExerciseType.CARDIO);
+
+        if (changed) {
+            saveCurrentUserWorkoutDraft();
+        }
+    }
+
+    private BodyPart findOrCreateBodyPart(String name) {
         for (BodyPart bodyPart : bodyParts) {
-            if ("Chest".equals(bodyPart.getName()) || "Back".equals(bodyPart.getName())) {
-                for (var exercise : bodyPart.getExercises()) {
-                    session.addExercise(exercise.copy());
-                }
+            if (bodyPart.getName().equalsIgnoreCase(name)) {
+                return bodyPart;
             }
         }
-        sessions.add(session);
-        registeredUser.addWorkoutSession(session);
+
+        BodyPart bodyPart = new BodyPart(name);
+        bodyParts.add(bodyPart);
+        return bodyPart;
     }
 
-    private void seedReminders() {
-        reminderService.scheduleReminder(registeredUser, "Chest Day", LocalDateTime.now().plusDays(1), null, "Push focus + warm up shoulders");
-        reminderService.scheduleReminder(registeredUser, "Leg Day", LocalDateTime.now().plusDays(3), null, null);
+    private boolean addDefaultExercise(BodyPart bodyPart, String name, ExerciseType type) {
+        if (bodyPart.findExercise(name) != null) {
+            return false;
+        }
+
+        bodyPart.createExercise(name, type);
+        return true;
+    }
+
+    private ArrayList<Reminder> getAllCurrentReminders() {
+        User user = requireCurrentUser();
+        return reminderService.getAllReminders(user);
+    }
+
+    private User requireCurrentUser() {
+        if (currentUser == null) {
+            throw new IllegalStateException("No user is logged in.");
+        }
+        return currentUser;
     }
 }

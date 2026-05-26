@@ -44,6 +44,7 @@ public class HealthController {
             service.updateHealth(weight, height);
             currentWeightLabel.setText("Current weight: " + weight + " kg");
             currentHeightLabel.setText("Current height: " + height + " cm");
+            heightField.setDisable(true);
             calculateAndDisplay();
         } catch (IllegalArgumentException e) {
             showError("Enter valid numbers for weight and height.");

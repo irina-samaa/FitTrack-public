@@ -3,6 +3,7 @@ package com.fittrack;
 import com.fittrack.controller.LoginController;
 import com.fittrack.service.FitnessTrackerService;
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
@@ -17,8 +18,8 @@ public class Main extends Application {
 
     @Override
     public void start(Stage primaryStage) throws Exception {
-        FitnessTrackerService.getInstance().login("admin", "1234");
-        loadMainWindow(primaryStage);
+        FitnessTrackerService.getInstance();
+        showLoginPopup(primaryStage);
     }
 
     /**
@@ -38,8 +39,16 @@ public class Main extends Application {
         Stage loginStage = new Stage();
         loginStage.initModality(Modality.APPLICATION_MODAL);
         loginStage.setTitle("FitTrack - Login");
-        loginStage.setScene(new Scene(root, 400, 300));
+        Scene scene = new Scene(root, 400, 340);
+        scene.getStylesheets().add(
+            Main.class.getResource("/com/fittrack/styles.css").toExternalForm());
+        loginStage.setScene(scene);
         loginStage.setResizable(false);
+        loginStage.setOnHidden(event -> {
+            if (primaryStage.getScene() == null && FitnessTrackerService.getInstance().getCurrentUser() == null) {
+                Platform.exit();
+            }
+        });
         loginStage.show();
     }
 

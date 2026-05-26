@@ -24,3 +24,4 @@ D:\P\CS Cohort 6\Fitness Tracker\FitTrack\FitTrack\src\main\java\com\fittrack\mo
 D:\P\CS Cohort 6\Fitness Tracker\FitTrack\FitTrack\src\main\java\com\fittrack\model\WorkoutSession.java
 D:\P\CS Cohort 6\Fitness Tracker\FitTrack\FitTrack\src\main\java\com\fittrack\service\FitnessTrackerService.java
 D:\P\CS Cohort 6\Fitness Tracker\FitTrack\FitTrack\src\main\java\com\fittrack\util\DataStore.java
+D:\P\CS Cohort 6\Fitness Tracker\FitTrack\FitTrack\src\main\java\com\fittrack\util\SQLiteRepository.java

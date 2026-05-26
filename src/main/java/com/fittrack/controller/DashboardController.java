@@ -22,8 +22,6 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.Set;
-import java.util.TreeSet;
 
 public class DashboardController {
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
@@ -31,27 +29,15 @@ public class DashboardController {
     private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm:ss");
     private static final DateTimeFormatter SHORT_DATE_FORMATTER = DateTimeFormatter.ofPattern("MMM d");
 
-    private static final String[] QUOTES = {
-        "No pain, no gain. Push through!",
-        "Your only competition is yesterday's you.",
-        "Consistency beats motivation every time.",
-        "Train hard, recover smart.",
-        "One more rep. Always one more rep."
-    };
-
     @FXML private Label sessionCountLabel;
     @FXML private Label lastSessionLabel;
     @FXML private Label bmiValueLabel;
     @FXML private Label bmiCategoryLabel;
     @FXML private Label reminderTitleLabel;
     @FXML private Label reminderTimeLabel;
-    @FXML private Label motivationLabel;
     @FXML private Label todayDateLabel;
     @FXML private Label currentTimeLabel;
     @FXML private Label upcomingCountLabel;
-    @FXML private Label streakCountLabel;
-    @FXML private Label streakDetailLabel;
-    @FXML private Label streakSupportLabel;
     @FXML private ListView<String> exerciseWorkloadsListView;
     @FXML private ListView<String> sessionWorkloadsListView;
 
@@ -66,8 +52,6 @@ public class DashboardController {
         loadBmiCard();
         loadReminderCard();
         loadPastExercises();
-        loadMotivationQuote();
-        loadStreakCard();
     }
 
     private void loadDateTimeHeader() {
@@ -91,14 +75,21 @@ public class DashboardController {
             return;
         }
 
-        ArrayList<WorkoutSession> sessions = new ArrayList<>(service.getSessions());
-        sessionCountLabel.setText(sessions.size() + " sessions logged");
-        if (sessions.isEmpty()) {
-            lastSessionLabel.setText("Latest: no workouts yet - go crush it!");
+        LocalDate today = LocalDate.now();
+        ArrayList<WorkoutSession> todaySessions = new ArrayList<>();
+        for (WorkoutSession session : service.getSessions()) {
+            if (LocalDate.parse(session.getDate()).equals(today)) {
+                todaySessions.add(session);
+            }
+        }
+
+        sessionCountLabel.setText(todaySessions.size() + " sessions logged");
+        if (todaySessions.isEmpty()) {
+            lastSessionLabel.setText("Latest: no workouts logged today.");
             return;
         }
 
-        WorkoutSession latest = sessions.get(sessions.size() - 1);
+        WorkoutSession latest = todaySessions.get(todaySessions.size() - 1);
         LocalDate latestDate = LocalDate.parse(latest.getDate());
         lastSessionLabel.setText("Latest: " + latest.getSessionName() + " on " + latestDate);
     }
@@ -144,67 +135,6 @@ public class DashboardController {
 
         reminderTitleLabel.setText(next.getLabel());
         reminderTimeLabel.setText(next.getScheduledTime().format(FORMATTER));
-    }
-
-    private void loadMotivationQuote() {
-        int index = (int) (Math.random() * QUOTES.length);
-        motivationLabel.setText("\"" + QUOTES[index] + "\"");
-    }
-
-    private void loadStreakCard() {
-        if (service.getCurrentUser() == null) {
-            streakCountLabel.setText("\uD83D\uDD25 --");
-            streakDetailLabel.setText("Log in to see your current workout streak.");
-            streakSupportLabel.setText("Your streak summary will appear here.");
-            return;
-        }
-
-        Set<LocalDate> workoutDays = new TreeSet<>();
-        for (WorkoutSession session : service.getSessions()) {
-            workoutDays.add(LocalDate.parse(session.getDate()));
-        }
-
-        long recentSessions = workoutDays.stream()
-            .filter(date -> !date.isBefore(LocalDate.now().minusDays(6)))
-            .count();
-        int streak = calculateStreak(workoutDays);
-
-        streakCountLabel.setText("\uD83D\uDD25 " + streak + " day" + (streak == 1 ? "" : "s"));
-        if (streak == 0) {
-            streakDetailLabel.setText("No active streak yet. Your next workout can light it up.");
-        } else {
-            streakDetailLabel.setText("You have trained on " + streak + " consecutive day" + (streak == 1 ? "" : "s") + ". Keep the fire going.");
-        }
-
-        if (workoutDays.isEmpty()) {
-            streakSupportLabel.setText("No workout history yet");
-            return;
-        }
-
-        LocalDate latestWorkout = workoutDays.stream().max(LocalDate::compareTo).orElse(LocalDate.now());
-        streakSupportLabel.setText(recentSessions + " active day" + (recentSessions == 1 ? "" : "s")
-            + " in the last 7 days | Last workout " + SHORT_DATE_FORMATTER.format(latestWorkout));
-    }
-
-    private int calculateStreak(Set<LocalDate> workoutDays) {
-        if (workoutDays.isEmpty()) {
-            return 0;
-        }
-
-        LocalDate cursor = LocalDate.now();
-        if (!workoutDays.contains(cursor)) {
-            cursor = cursor.minusDays(1);
-            if (!workoutDays.contains(cursor)) {
-                return 0;
-            }
-        }
-
-        int streak = 0;
-        while (workoutDays.contains(cursor)) {
-            streak++;
-            cursor = cursor.minusDays(1);
-        }
-        return streak;
     }
 
     private void configureWorkloadLists() {

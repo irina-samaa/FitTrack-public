@@ -54,7 +54,12 @@
             maxWidth="Infinity"
             defaultButton="true" />
 
-    <Label text="Test account: admin / 1234"
+    <Button text="CREATE ACCOUNT"
+            styleClass="accent-button"
+            onAction="#handleCreateAccount"
+            maxWidth="Infinity" />
+
+    <Label text="Seeded accounts: admin / 1234 and testuser / 1234"
            styleClass="hint-text"
            style="-fx-text-fill: #555;" />
 

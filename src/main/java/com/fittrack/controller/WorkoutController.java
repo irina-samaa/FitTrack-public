@@ -90,6 +90,7 @@ public class WorkoutController {
         selectedExercise = null;
         selectedBodyPart = null;
         selectedExerciseLabel.setText("SETS");
+        newExerciseField.clear();
         refreshSessionWorkloadLabel();
 
         if (bodyPartName == null) {
@@ -123,6 +124,8 @@ public class WorkoutController {
         }
 
         selectedExerciseLabel.setText("Sets - " + exerciseName + " [" + selectedExercise.getExerciseType().getDisplayName() + "]");
+        newExerciseField.setText(selectedExercise.getName());
+        exerciseTypeComboBox.setValue(selectedExercise.getExerciseType().getDisplayName());
         setItems.setAll(selectedExercise.getSets());
         updateMetricInputs(selectedExercise.getExerciseType());
         refreshSessionWorkloadLabel();
@@ -156,6 +159,12 @@ public class WorkoutController {
         }
 
         ExerciseType type = ExerciseType.fromDisplayName(exerciseTypeComboBox.getValue());
+        Exercise existingExercise = service.findExercise(selectedBodyPart.getName(), name);
+        if (existingExercise != null) {
+            exerciseListView.getSelectionModel().select(buildExerciseDisplayName(existingExercise));
+            return;
+        }
+
         service.createExercise(selectedBodyPart.getName(), name, type);
         newExerciseField.clear();
         onBodyPartSelected(selectedBodyPart.getName());
@@ -230,22 +239,18 @@ public class WorkoutController {
             case STRENGTH -> {
                 firstMetricLabel.setText("Reps");
                 secondMetricLabel.setText("Weight (kg)");
-                firstMetricField.setPromptText("e.g. 8");
-                secondMetricField.setPromptText("e.g. 60");
             }
             case CARDIO -> {
                 firstMetricLabel.setText("Duration (min)");
                 secondMetricLabel.setText("Distance (km)");
-                firstMetricField.setPromptText("e.g. 20");
-                secondMetricField.setPromptText("e.g. 3.5");
             }
             case ENDURANCE -> {
                 firstMetricLabel.setText("Duration (min)");
                 secondMetricLabel.setText("Heart Rate");
-                firstMetricField.setPromptText("e.g. 18");
-                secondMetricField.setPromptText("e.g. 145");
             }
         }
+        firstMetricField.setPromptText(firstMetricLabel.getText());
+        secondMetricField.setPromptText(secondMetricLabel.getText());
         primaryMetricColumn.setText(firstMetricLabel.getText());
         secondaryMetricColumn.setText(secondMetricLabel.getText());
         refreshSessionWorkloadLabel();
@@ -314,4 +319,5 @@ public class WorkoutController {
         alert.setContentText(message);
         alert.showAndWait();
     }
+
 }
