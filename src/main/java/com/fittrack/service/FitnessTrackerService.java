@@ -38,6 +38,7 @@ public class FitnessTrackerService {
 
     public void setCurrentUserId(String userId) {
         this.currentUserId = userId;
+        dataStore.loadUserData(userId);
     }
 
     public String getCurrentUserId() {
