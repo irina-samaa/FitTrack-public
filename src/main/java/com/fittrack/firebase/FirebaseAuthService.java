@@ -127,7 +127,6 @@ public class FirebaseAuthService {
         return response;
     }
 
-    /** Very simple JSON field extractor — no extra library needed. */
     private String extractField(String json, String field) {
         String key = "\"" + field + "\":\"";
         int start = json.indexOf(key);
