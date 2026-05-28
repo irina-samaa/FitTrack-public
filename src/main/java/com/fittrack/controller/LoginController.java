@@ -10,7 +10,7 @@ import javafx.scene.control.TextField;
 import javafx.stage.Stage;
 
 public class LoginController {
-    @FXML private TextField usernameField;   // now used as email field
+    @FXML private TextField usernameField;     // used as email field
     @FXML private PasswordField passwordField;
     @FXML private Label errorLabel;
 
@@ -35,14 +35,13 @@ public class LoginController {
         boolean success = authService.signIn(email, password);
 
         if (success) {
-            // Tell FitnessTrackerService which user is now logged in
             service.setCurrentUserId(authService.getCurrentUserId());
             try {
                 Stage loginStage = (Stage) usernameField.getScene().getWindow();
                 loginStage.close();
                 Main.loadMainWindow(primaryStage);
             } catch (Exception e) {
-                System.out.println("Error loading main window: " + e.getMessage());
+                showError("Error loading main window: " + e.getMessage());
             }
         } else {
             showError("Invalid email or password. Please try again.");
@@ -50,12 +49,12 @@ public class LoginController {
     }
 
     @FXML
-    private void handleRegister() {
+    private void handleCreateAccount() {
         String email = usernameField.getText().trim();
         String password = passwordField.getText();
 
         if (email.isEmpty() || password.isEmpty()) {
-            showError("Please enter an email and password to register.");
+            showError("Please enter an email and password to create an account.");
             return;
         }
 
@@ -73,7 +72,7 @@ public class LoginController {
                 loginStage.close();
                 Main.loadMainWindow(primaryStage);
             } catch (Exception e) {
-                System.out.println("Error loading main window: " + e.getMessage());
+                showError("Error loading main window: " + e.getMessage());
             }
         } else {
             showError("Registration failed. Email may already be in use.");
@@ -83,9 +82,15 @@ public class LoginController {
     private void showError(String message) {
         errorLabel.setText(message);
         errorLabel.setVisible(true);
+        errorLabel.setManaged(true);
     }
 
     @FXML
+    private void clearError() {
+        errorLabel.setVisible(false);
+        errorLabel.setManaged(false);
+    }
+}
     private void clearError() {
         errorLabel.setVisible(false);
     }
