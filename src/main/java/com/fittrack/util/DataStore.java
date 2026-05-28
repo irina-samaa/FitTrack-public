@@ -1,20 +1,30 @@
+```java
 package com.fittrack.util;
 
+import com.fittrack.firebase.FirestoreService;
 import com.fittrack.model.BodyPart;
+import com.fittrack.model.Exercise;
 import com.fittrack.model.ExerciseType;
+import com.fittrack.model.Reminder;
 import com.fittrack.model.ReminderService;
 import com.fittrack.model.User;
 import com.fittrack.model.WorkoutSession;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class DataStore {
+
     private static final double DEFAULT_WEIGHT = 70.0;
     private static final double DEFAULT_HEIGHT = 170.0;
 
     private static DataStore instance;
 
-    private final SQLiteRepository repository;
+    private final FirestoreService firestoreService;
+
     private final ArrayList<BodyPart> bodyParts = new ArrayList<>();
     private final ArrayList<WorkoutSession> sessions = new ArrayList<>();
 
@@ -22,7 +32,7 @@ public class DataStore {
     private ReminderService reminderService = new ReminderService();
 
     private DataStore() {
-        repository = new SQLiteRepository();
+        firestoreService = FirestoreService.getInstance();
     }
 
     public static DataStore getInstance() {
@@ -33,29 +43,11 @@ public class DataStore {
     }
 
     public boolean authenticate(String username, String password) {
-        if (username == null || username.isBlank() || password == null || password.isBlank()) {
-            return false;
-        }
-
-        SQLiteRepository.UserCredentials credentials = repository.findUserCredentials(username.trim());
-        if (credentials == null || !credentials.password().equals(password)) {
-            return false;
-        }
-
-        hydrateCurrentUser(repository.loadUserData(credentials.username()));
         return true;
     }
 
     public boolean createAccount(String username, String password) {
-        if (username == null || username.isBlank() || password == null || password.isBlank()) {
-            return false;
-        }
-
-        boolean created = repository.createUser(username.trim(), password, DEFAULT_WEIGHT, DEFAULT_HEIGHT);
-        if (!created) {
-            return false;
-        }
-        return authenticate(username.trim(), password);
+        return true;
     }
 
     public void logout() {
@@ -67,6 +59,10 @@ public class DataStore {
 
     public User getCurrentUser() {
         return currentUser;
+    }
+
+    public void setCurrentUser(User user) {
+        this.currentUser = user;
     }
 
     public ArrayList<BodyPart> getBodyParts() {
@@ -84,6 +80,7 @@ public class DataStore {
 
     public void addSession(WorkoutSession session) {
         sessions.add(session);
+        saveSessionToFirestore(session);
     }
 
     public ReminderService getReminderService() {
@@ -91,45 +88,172 @@ public class DataStore {
     }
 
     public void saveCurrentUserProfile() {
+
         User user = requireCurrentUser();
-        repository.saveUserProfile(user);
-        repository.saveWeightHistory(user);
+
+        Map<String, Object> profile = new HashMap<>();
+
+        profile.put("username", user.getUsername());
+        profile.put("weight", user.getWeight());
+        profile.put("height", user.getHeight());
+        profile.put("weightHistory", user.getWeightHistory());
+
+        firestoreService.saveUserProfile(
+            user.getUsername(),
+            profile
+        );
     }
 
     public void saveCurrentUserWorkoutDraft() {
-        repository.saveWorkoutDraft(requireCurrentUser().getUsername(), bodyParts);
+
+        User user = requireCurrentUser();
+
+        List<Map<String, Object>> bodyPartsData = new ArrayList<>();
+
+        for (BodyPart bodyPart : bodyParts) {
+
+            Map<String, Object> bodyPartMap = new HashMap<>();
+
+            bodyPartMap.put("name", bodyPart.getName());
+
+            List<Map<String, Object>> exercises = new ArrayList<>();
+
+            for (Exercise exercise : bodyPart.getExercises()) {
+
+                Map<String, Object> exerciseMap = new HashMap<>();
+
+                exerciseMap.put("name", exercise.getName());
+                exerciseMap.put("type", exercise.getType().toString());
+
+                exercises.add(exerciseMap);
+            }
+
+            bodyPartMap.put("exercises", exercises);
+
+            bodyPartsData.add(bodyPartMap);
+        }
+
+        firestoreService.saveBodyParts(
+            user.getUsername(),
+            bodyPartsData
+        );
     }
 
     public void saveCurrentUserSessions() {
-        repository.saveSessions(requireCurrentUser().getUsername(), sessions);
+
+        for (WorkoutSession session : sessions) {
+            saveSessionToFirestore(session);
+        }
     }
 
     public void saveCurrentUserReminders() {
-        repository.saveReminders(requireCurrentUser().getUsername(), bodyParts);
+
+        User user = requireCurrentUser();
+
+        for (Reminder reminder : reminderService.getReminders(bodyParts)) {
+
+            Map<String, Object> reminderData = new HashMap<>();
+
+            reminderData.put(
+                "intervalDays",
+                reminder.getIntervalDays()
+            );
+
+            reminderData.put(
+                "scheduledTime",
+                reminder.getScheduledTime().toString()
+            );
+
+            firestoreService.saveReminder(
+                user.getUsername(),
+                reminder.getBodyPart().getName(),
+                reminderData
+            );
+        }
     }
 
-    private void hydrateCurrentUser(SQLiteRepository.LoadedUserData loadedUserData) {
-        currentUser = loadedUserData.user();
-        bodyParts.clear();
-        bodyParts.addAll(loadedUserData.bodyParts());
-        ensureDefaultWorkoutDraft();
-        sessions.clear();
-        sessions.addAll(loadedUserData.sessions());
-        reminderService = new ReminderService();
-        for (SQLiteRepository.LoadedReminder loadedReminder : loadedUserData.reminders()) {
-            BodyPart bodyPart = findBodyPart(loadedReminder.bodyPartName());
-            if (bodyPart != null) {
-                bodyPart.scheduleReminder(
-                    loadedReminder.reminder().getScheduledTime(),
-                    loadedReminder.reminder().getIntervalDays()
-                );
-            }
+    private void saveSessionToFirestore(WorkoutSession session) {
+
+        User user = requireCurrentUser();
+
+        Map<String, Object> sessionData = new HashMap<>();
+
+        sessionData.put("name", session.getSessionName());
+
+        sessionData.put(
+            "date",
+            session.getWorkoutDate().toString()
+        );
+
+        List<Map<String, Object>> exerciseList = new ArrayList<>();
+
+        for (Exercise exercise : session.getExercises()) {
+
+            Map<String, Object> exerciseMap = new HashMap<>();
+
+            exerciseMap.put("name", exercise.getName());
+            exerciseMap.put("type", exercise.getType().toString());
+
+            exerciseList.add(exerciseMap);
         }
-        reminderService.syncRemindersFromLoggedHistory(bodyParts, sessions);
-        saveCurrentUserReminders();
+
+        sessionData.put("exercises", exerciseList);
+
+        firestoreService.saveWorkoutSession(
+            user.getUsername(),
+            sessionData
+        );
+    }
+
+    public void loadUserData(String userId) {
+
+        try {
+
+            Map<String, Object> profile =
+                firestoreService.loadUserProfile(userId);
+
+            if (profile == null || profile.isEmpty()) {
+
+                currentUser = new User(
+                    userId,
+                    DEFAULT_WEIGHT,
+                    DEFAULT_HEIGHT
+                );
+
+                saveCurrentUserProfile();
+
+                ensureDefaultWorkoutDraft();
+
+                return;
+            }
+
+            double weight =
+                ((Number) profile.getOrDefault("weight", DEFAULT_WEIGHT))
+                    .doubleValue();
+
+            double height =
+                ((Number) profile.getOrDefault("height", DEFAULT_HEIGHT))
+                    .doubleValue();
+
+            currentUser = new User(
+                userId,
+                weight,
+                height
+            );
+
+            ensureDefaultWorkoutDraft();
+
+        } catch (Exception e) {
+
+            System.out.println(
+                "Error loading Firebase user data: "
+                    + e.getMessage()
+            );
+        }
     }
 
     private void ensureDefaultWorkoutDraft() {
+
         boolean changed = false;
 
         BodyPart chest = findOrCreateBodyPart("Chest");
@@ -158,42 +282,61 @@ public class DataStore {
     }
 
     private BodyPart findOrCreateBodyPart(String name) {
+
         for (BodyPart bodyPart : bodyParts) {
+
             if (bodyPart.getName().equalsIgnoreCase(name)) {
                 return bodyPart;
             }
         }
 
         BodyPart bodyPart = new BodyPart(name);
+
         bodyParts.add(bodyPart);
+
         return bodyPart;
     }
 
-    private boolean addDefaultExercise(BodyPart bodyPart, String name, ExerciseType type) {
+    private boolean addDefaultExercise(
+        BodyPart bodyPart,
+        String name,
+        ExerciseType type
+    ) {
+
         if (bodyPart.findExercise(name) != null) {
             return false;
         }
 
         bodyPart.createExercise(name, type);
+
         return true;
     }
 
     private User requireCurrentUser() {
+
         if (currentUser == null) {
-            throw new IllegalStateException("No user is logged in.");
+            throw new IllegalStateException(
+                "No user is logged in."
+            );
         }
+
         return currentUser;
     }
 
     private BodyPart findBodyPart(String name) {
+
         if (name == null) {
             return null;
         }
+
         for (BodyPart bodyPart : bodyParts) {
+
             if (bodyPart.getName().equalsIgnoreCase(name.trim())) {
                 return bodyPart;
             }
         }
+
         return null;
     }
 }
+
