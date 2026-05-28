@@ -101,8 +101,6 @@ public class FirebaseAuthService {
         return idToken;
     }
 
-    // --- Helpers ---
-
     private String post(String urlStr, String body) throws Exception {
         URL url = new URL(urlStr);
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
