@@ -1,4 +1,3 @@
-```java
 package com.fittrack.util;
 
 import com.fittrack.firebase.FirestoreService;
