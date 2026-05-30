@@ -5,14 +5,16 @@ import com.fittrack.model.Exercise;
 import com.fittrack.model.ExerciseType;
 import com.fittrack.model.HealthMetrics;
 import com.fittrack.model.ProgressTracker;
-import com.fittrack.model.Reminder;
 import com.fittrack.model.SetRecord;
 import com.fittrack.model.User;
 import com.fittrack.model.WorkoutSession;
 import com.fittrack.util.DataStore;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 public class FitnessTrackerService {
     private static FitnessTrackerService instance;
@@ -20,7 +22,6 @@ public class FitnessTrackerService {
     private final DataStore dataStore;
     private final HealthMetrics healthMetrics;
     private final ProgressTracker progressTracker;
-    private String currentUserId; // Firebase user ID
 
     private FitnessTrackerService() {
         dataStore = DataStore.getInstance();
@@ -35,32 +36,27 @@ public class FitnessTrackerService {
         return instance;
     }
 
-
-    public void setCurrentUserId(String userId) {
-        this.currentUserId = userId;
-        dataStore.loadUserData(userId);
-    }
-
-    public String getCurrentUserId() {
-        return currentUserId;
-    }
-
-
     public boolean login(String username, String password) {
         return dataStore.authenticate(username, password);
+    }
+
+    public boolean createAccount(String username, String password) {
+        return dataStore.createAccount(username, password);
+    }
+
+    public void logout() {
+        dataStore.logout();
     }
 
     public User getCurrentUser() {
         return dataStore.getCurrentUser();
     }
 
-
     public List<BodyPart> getBodyParts() {
         return dataStore.getBodyParts();
     }
 
     public BodyPart createBodyPart(String name) {
-        requireCurrentUser();
         BodyPart bodyPart = new BodyPart(name);
         dataStore.addBodyPart(bodyPart);
         return bodyPart;
@@ -77,7 +73,9 @@ public class FitnessTrackerService {
 
     public Exercise createExercise(String bodyPartName, String exerciseName, ExerciseType type) {
         BodyPart bodyPart = requireBodyPart(bodyPartName);
-        return bodyPart.createExercise(exerciseName, type);
+        Exercise exercise = bodyPart.createExercise(exerciseName, type);
+        dataStore.saveCurrentUserWorkoutDraft();
+        return exercise;
     }
 
     public Exercise findExercise(String bodyPartName, String exerciseName) {
@@ -87,30 +85,29 @@ public class FitnessTrackerService {
     public void addSet(String bodyPartName, String exerciseName, int firstMetric, double secondMetric) {
         Exercise exercise = requireExercise(bodyPartName, exerciseName);
         exercise.addSet(firstMetric, secondMetric);
+        dataStore.saveCurrentUserWorkoutDraft();
     }
 
     public void deleteSet(String bodyPartName, String exerciseName, SetRecord setRecord) {
         Exercise exercise = requireExercise(bodyPartName, exerciseName);
         exercise.removeSet(setRecord);
+        dataStore.saveCurrentUserWorkoutDraft();
     }
-
-    public List<SetRecord> getSets(String bodyPartName, String exerciseName) {
-        return requireExercise(bodyPartName, exerciseName).getSets();
-    }
-
 
     public WorkoutSession startWorkoutSession(String sessionName) {
         requireCurrentUser();
         String resolvedSessionName = (sessionName == null || sessionName.isBlank())
-                ? "Workout - " + java.time.LocalDate.now()
-                : sessionName.trim();
-        WorkoutSession session = new WorkoutSession(java.time.LocalDate.now(), resolvedSessionName);
+            ? "Workout - " + LocalDate.now()
+            : sessionName.trim();
+        WorkoutSession session = new WorkoutSession(LocalDate.now(), resolvedSessionName);
         List<Exercise> exercisesToClear = new ArrayList<>();
+        Set<String> loggedBodyPartNames = new LinkedHashSet<>();
         for (BodyPart bodyPart : dataStore.getBodyParts()) {
             for (Exercise exercise : bodyPart.getExercises()) {
                 if (exercise.hasSets()) {
                     session.addExercise(exercise.copy());
                     exercisesToClear.add(exercise);
+                    loggedBodyPartNames.add(bodyPart.getName());
                 }
             }
         }
@@ -121,6 +118,12 @@ public class FitnessTrackerService {
         for (Exercise exercise : exercisesToClear) {
             exercise.clearSets();
         }
+
+        dataStore.getReminderService().logBodyParts(dataStore.getBodyParts(), loggedBodyPartNames);
+
+        dataStore.saveCurrentUserSessions();
+        dataStore.saveCurrentUserWorkoutDraft();
+        dataStore.saveCurrentUserReminders();
         return session;
     }
 
@@ -132,6 +135,7 @@ public class FitnessTrackerService {
         User user = requireCurrentUser();
         user.updateWeight(weight);
         user.updateHeight(height);
+        dataStore.saveCurrentUserProfile();
     }
 
     public double calculateBMI() {
@@ -167,7 +171,6 @@ public class FitnessTrackerService {
         return progressTracker.getLabels(requireCurrentUser());
     }
 
-<<<<<<< HEAD
     public ArrayList<String> getChartWeightLabels() {
         return progressTracker.getChartWeightLabels(requireCurrentUser());
     }
@@ -205,45 +208,36 @@ public class FitnessTrackerService {
     public double getAverageWorkload() {
         requireCurrentUser();
         return progressTracker.getAverageWorkload(dataStore.getSessions());
-=======
-    public ArrayList<Reminder> getReminders() {
-        return dataStore.getReminderService().getReminders(dataStore.getBodyParts());
     }
 
-    public Reminder getReminder(String bodyPartName) {
-        return dataStore.getReminderService().getReminder(requireBodyPart(bodyPartName));
-    }
-
-    public Reminder getNextReminder() {
-        return dataStore.getReminderService().getNextReminder(requireCurrentUser(), dataStore.getBodyParts());
->>>>>>> 345575dd1aae5a1eca6e424790fb1214438ea351
-    }
-
-    public void createOrUpdateReminder(String bodyPartName, Integer thresholdDays, String note) {
+    public ArrayList<ProgressTracker.DailyWorkload> getDailyWorkloadSummaries(LocalDate prioritizedDate) {
         requireCurrentUser();
-        dataStore.getReminderService().createOrUpdateReminder(requireBodyPart(bodyPartName), thresholdDays, note);
+        return progressTracker.getDailyWorkloadSummaries(dataStore.getSessions(), prioritizedDate);
     }
 
-    public int getInactiveDays(Reminder reminder) {
-        return dataStore.getReminderService().getInactiveDays(requireCurrentUser(), reminder);
+    public int getDefaultReminderDays() {
+        return com.fittrack.model.ReminderService.DEFAULT_INTERVAL_DAYS;
     }
 
-    public int getDaysRemaining(Reminder reminder) {
-        return dataStore.getReminderService().getDaysRemaining(requireCurrentUser(), reminder);
+    public void updateBodyPartReminderDays(String bodyPartName, int days) {
+        requireCurrentUser();
+        BodyPart bodyPart = requireBodyPart(bodyPartName);
+        boolean updated = dataStore.getReminderService().updateBodyPartReminderDays(bodyPart, days, dataStore.getSessions());
+        if (!updated) {
+            throw new IllegalStateException("Log this body part once before changing its reminder.");
+        }
+        dataStore.saveCurrentUserReminders();
     }
 
-    public boolean isReminderDue(Reminder reminder) {
-        return dataStore.getReminderService().isDue(requireCurrentUser(), reminder);
+    public BodyPart getNextReminderBodyPart() {
+        requireCurrentUser();
+        return dataStore.getReminderService().getNextReminderBodyPart(dataStore.getBodyParts());
     }
 
-    public boolean hasReminderStarted(Reminder reminder) {
-        return dataStore.getReminderService().hasStarted(requireCurrentUser(), reminder);
+    public ArrayList<BodyPart> getBodyPartsWithReminders() {
+        requireCurrentUser();
+        return dataStore.getReminderService().getBodyPartsWithReminders(dataStore.getBodyParts());
     }
-
-    public int getDueReminderCount() {
-        return dataStore.getReminderService().getDueCount(requireCurrentUser(), dataStore.getBodyParts());
-    }
-
     private User requireCurrentUser() {
         User user = dataStore.getCurrentUser();
         if (user == null) {

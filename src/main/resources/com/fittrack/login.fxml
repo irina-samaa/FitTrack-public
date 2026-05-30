@@ -2,6 +2,7 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.text.*?>
+
 <!--
   login.fxml - Popup login screen.
   Controller: LoginController.java
@@ -12,23 +13,20 @@
       alignment="CENTER"
       spacing="16"
       style="-fx-padding: 40; -fx-background-color: #0F0F0F;">
+
     <!-- Logo / App Name -->
     <Label text="FitTrack" styleClass="app-title" />
     <Label text="Your personal fitness companion" styleClass="subtitle-text" />
-<<<<<<< HEAD
 
     <!-- Username Field -->
-=======
-    <Separator style="-fx-background-color: #333; -fx-padding: 4 0;" />
-    <!-- Email Field -->
->>>>>>> 345575dd1aae5a1eca6e424790fb1214438ea351
     <VBox spacing="4">
-        <Label text="EMAIL" styleClass="field-label" />
+        <Label text="USERNAME" styleClass="field-label" />
         <TextField fx:id="usernameField"
-                   promptText="Enter email"
+                   promptText="Enter username"
                    styleClass="dark-input"
                    onKeyTyped="#clearError" />
     </VBox>
+
     <!-- Password Field -->
     <VBox spacing="4">
         <Label text="PASSWORD" styleClass="field-label" />
@@ -38,27 +36,25 @@
                        onKeyTyped="#clearError"
                        onAction="#handleLogin" />
     </VBox>
+
     <!-- Error message - hidden by default -->
     <Label fx:id="errorLabel"
            text="Invalid credentials"
            styleClass="error-label"
            visible="false"
            managed="false" />
+    <!-- managed="false" keeps it from taking up layout space when hidden -->
+
     <!-- Login Button -->
     <Button text="LOGIN"
             styleClass="primary-button"
             onAction="#handleLogin"
             maxWidth="Infinity"
             defaultButton="true" />
+
     <Button text="CREATE ACCOUNT"
             styleClass="accent-button"
             onAction="#handleCreateAccount"
             maxWidth="Infinity" />
-<<<<<<< HEAD
 
-=======
-    <Label text="Use your email and password to log in or create a new account."
-           styleClass="hint-text"
-           style="-fx-text-fill: #555;" />
->>>>>>> 345575dd1aae5a1eca6e424790fb1214438ea351
 </VBox>
