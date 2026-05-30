@@ -1,6 +1,7 @@
 package com.fittrack.controller;
 
 import com.fittrack.Main;
+import com.fittrack.firebase.FirebaseAuthService;
 import com.fittrack.service.FitnessTrackerService;
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
@@ -9,10 +10,11 @@ import javafx.scene.control.TextField;
 import javafx.stage.Stage;
 
 public class LoginController {
-    @FXML private TextField usernameField;
+    @FXML private TextField usernameField;     // used as email field
     @FXML private PasswordField passwordField;
     @FXML private Label errorLabel;
 
+    private final FirebaseAuthService authService = FirebaseAuthService.getInstance();
     private final FitnessTrackerService service = FitnessTrackerService.getInstance();
     private Stage primaryStage;
 
@@ -22,50 +24,58 @@ public class LoginController {
 
     @FXML
     private void handleLogin() {
-        String username = usernameField.getText().trim();
+        String email = usernameField.getText().trim();
         String password = passwordField.getText();
-        clearError();
 
-        if (username.isEmpty() || password.isEmpty()) {
-            showError("Enter both username and password.");
+        if (email.isEmpty() || password.isEmpty()) {
+            showError("Please enter your email and password.");
             return;
         }
 
-        if (service.login(username, password)) {
-            openMainWindow();
-            return;
-        }
+        boolean success = authService.signIn(email, password);
 
-        showError("Invalid credentials. Try admin / 1234 or testuser / 1234");
+        if (success) {
+            service.setCurrentUserId(authService.getCurrentUserId());
+            try {
+                Stage loginStage = (Stage) usernameField.getScene().getWindow();
+                loginStage.close();
+                Main.loadMainWindow(primaryStage);
+            } catch (Exception e) {
+                showError("Error loading main window: " + e.getMessage());
+            }
+        } else {
+            showError("Invalid email or password. Please try again.");
+        }
     }
 
     @FXML
     private void handleCreateAccount() {
-        String username = usernameField.getText().trim();
+        String email = usernameField.getText().trim();
         String password = passwordField.getText();
-        clearError();
 
-        if (username.isEmpty() || password.isEmpty()) {
-            showError("Enter username and password to create an account.");
+        if (email.isEmpty() || password.isEmpty()) {
+            showError("Please enter an email and password to create an account.");
             return;
         }
 
-        if (service.createAccount(username, password)) {
-            openMainWindow();
+        if (password.length() < 6) {
+            showError("Password must be at least 6 characters.");
             return;
         }
 
-        showError("Username already exists or input is invalid.");
-    }
+        boolean success = authService.signUp(email, password);
 
-    private void openMainWindow() {
-        try {
-            Main.loadMainWindow(primaryStage);
-            Stage loginStage = (Stage) usernameField.getScene().getWindow();
-            loginStage.close();
-        } catch (Exception e) {
-            System.out.println("Error loading main window: " + e.getMessage());
-            showError("Could not open the main window.");
+        if (success) {
+            service.setCurrentUserId(authService.getCurrentUserId());
+            try {
+                Stage loginStage = (Stage) usernameField.getScene().getWindow();
+                loginStage.close();
+                Main.loadMainWindow(primaryStage);
+            } catch (Exception e) {
+                showError("Error loading main window: " + e.getMessage());
+            }
+        } else {
+            showError("Registration failed. Email may already be in use.");
         }
     }
 
@@ -79,5 +89,9 @@ public class LoginController {
     private void clearError() {
         errorLabel.setVisible(false);
         errorLabel.setManaged(false);
+    }
+}
+    private void clearError() {
+        errorLabel.setVisible(false);
     }
 }
