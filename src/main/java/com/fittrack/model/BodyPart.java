@@ -32,6 +32,13 @@ public class BodyPart {
         return Collections.unmodifiableList(exercises);
     }
 
+    public boolean removeExercise(String exerciseName) {
+        if (exerciseName == null || exerciseName.isBlank()) {
+            return false;
+        }
+        return exercises.removeIf(exercise -> exercise.getName().equalsIgnoreCase(exerciseName));
+    }
+
     public Reminder getReminder() {
         return reminder;
     }

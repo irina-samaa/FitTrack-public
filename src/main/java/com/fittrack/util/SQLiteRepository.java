@@ -17,6 +17,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -292,6 +293,9 @@ public class SQLiteRepository {
                 )
                 """);
             seedIfEmpty(connection);
+            ensureAdminWeightHistory(connection);
+            ensureAdminReportSessions(connection);
+            ensureAdminDueTodayReminder(connection);
         } catch (SQLException e) {
             throw new IllegalStateException("Failed to initialize SQLite database.", e);
         }
@@ -353,8 +357,9 @@ public class SQLiteRepository {
         }
 
         connection.setAutoCommit(false);
-        long adminId = insertUser(connection, "admin", "1234", 70.0, 175.0);
-        insertWeightHistory(connection, adminId, List.of(68.0, 69.0, 70.0, 70.5, 71.0, 70.0, 69.5));
+        List<Double> adminWeights = buildAdminWeightHistory();
+        long adminId = insertUser(connection, "admin", "1234", adminWeights.get(adminWeights.size() - 1), 175.0);
+        insertWeightHistory(connection, adminId, adminWeights, getAdminReportStartDate());
         seedAdminDraft(connection, adminId);
         seedAdminSessions(connection, adminId);
         seedAdminReminders(connection, adminId);
@@ -365,7 +370,6 @@ public class SQLiteRepository {
 
     private void seedAdminDraft(Connection connection, long adminId) throws SQLException {
         BodyPart chest = new BodyPart("Chest");
-        chest.createExercise("Bench Press", ExerciseType.STRENGTH).addSet(8, 60);
         chest.createExercise("Push Up", ExerciseType.STRENGTH).addSet(20, 0);
         chest.createExercise("Chest Fly", ExerciseType.STRENGTH).addSet(12, 15);
 
@@ -395,23 +399,164 @@ public class SQLiteRepository {
     }
 
     private void seedAdminSessions(Connection connection, long adminId) throws SQLException {
-        WorkoutSession session = new WorkoutSession(LocalDate.now().minusDays(1), "Upper Body Session");
+        insertAdminReportSessions(connection, adminId, buildAdminReportSessions());
+    }
 
-        BodyPart chest = new BodyPart("Chest");
-        chest.createExercise("Bench Press", ExerciseType.STRENGTH).addSet(8, 60);
-        chest.createExercise("Push Up", ExerciseType.STRENGTH).addSet(20, 0);
-        chest.createExercise("Chest Fly", ExerciseType.STRENGTH).addSet(12, 15);
-        for (Exercise exercise : chest.getExercises()) {
-            session.addExercise(exercise.copy());
+    private void ensureAdminWeightHistory(Connection connection) throws SQLException {
+        Long adminId = findOptionalUserId(connection, "admin");
+        if (adminId == null) {
+            return;
         }
 
-        BodyPart back = new BodyPart("Back");
-        back.createExercise("Deadlift", ExerciseType.STRENGTH).addSet(5, 100);
-        back.createExercise("Rowing Machine", ExerciseType.ENDURANCE).addSet(18, 145);
-        for (Exercise exercise : back.getExercises()) {
-            session.addExercise(exercise.copy());
+        List<Double> adminWeights = buildAdminWeightHistory();
+        LocalDate startDate = getAdminReportStartDate();
+        if (adminWeightHistoryMatches(connection, adminId, adminWeights, startDate)) {
+            return;
         }
 
+        connection.setAutoCommit(false);
+        deleteByUserId(connection, "weight_history", adminId);
+        insertWeightHistory(connection, adminId, adminWeights, startDate);
+        updateUserWeight(connection, adminId, adminWeights.get(adminWeights.size() - 1));
+        connection.commit();
+        connection.setAutoCommit(true);
+    }
+
+    private boolean adminWeightHistoryMatches(Connection connection, long adminId, List<Double> expectedWeights, LocalDate startDate) throws SQLException {
+        String sql = "SELECT weight, record_date FROM weight_history WHERE user_id = ? ORDER BY record_order ASC, id ASC";
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setLong(1, adminId);
+            try (ResultSet resultSet = statement.executeQuery()) {
+                for (int i = 0; i < expectedWeights.size(); i++) {
+                    if (!resultSet.next()) {
+                        return false;
+                    }
+
+                    LocalDate expectedDate = startDate.plusDays(i);
+                    double expectedWeight = expectedWeights.get(i);
+                    if (!expectedDate.equals(LocalDate.parse(resultSet.getString("record_date")))) {
+                        return false;
+                    }
+                    if (Math.abs(resultSet.getDouble("weight") - expectedWeight) > 0.0001) {
+                        return false;
+                    }
+                }
+                return !resultSet.next();
+            }
+        }
+    }
+
+    private void ensureAdminReportSessions(Connection connection) throws SQLException {
+        Long adminId = findOptionalUserId(connection, "admin");
+        if (adminId == null) {
+            return;
+        }
+
+        ArrayList<WorkoutSession> missingSessions = new ArrayList<>();
+        for (WorkoutSession session : buildAdminReportSessions()) {
+            if (!sessionExists(connection, adminId, session.getSessionName())) {
+                missingSessions.add(session);
+            }
+        }
+
+        if (!missingSessions.isEmpty()) {
+            connection.setAutoCommit(false);
+            insertAdminReportSessions(connection, adminId, missingSessions);
+            connection.commit();
+            connection.setAutoCommit(true);
+        }
+    }
+
+    private void ensureAdminDueTodayReminder(Connection connection) throws SQLException {
+        Long adminId = findOptionalUserId(connection, "admin");
+        if (adminId == null) {
+            return;
+        }
+
+        upsertAdminDueTodayReminder(connection, adminId, "Legs");
+        postponeAdminDueTodayReminder(connection, adminId, "Chest");
+    }
+
+    private void postponeAdminDueTodayReminder(Connection connection, long adminId, String bodyPartName) throws SQLException {
+        LocalDateTime nextReminder = LocalDateTime.now().plusDays(5);
+        String updateSql = """
+            UPDATE reminders
+            SET scheduled_time = ?, repeat_interval_days = ?, note = NULL
+            WHERE user_id = ?
+              AND label = ?
+              AND scheduled_time LIKE ?
+            """;
+        try (PreparedStatement statement = connection.prepareStatement(updateSql)) {
+            statement.setString(1, nextReminder.toString());
+            statement.setInt(2, 5);
+            statement.setLong(3, adminId);
+            statement.setString(4, bodyPartName);
+            statement.setString(5, LocalDate.now() + "%");
+            statement.executeUpdate();
+        }
+    }
+
+    private void upsertAdminDueTodayReminder(Connection connection, long adminId, String bodyPartName) throws SQLException {
+        LocalDateTime dueToday = LocalDate.now().atStartOfDay();
+        int intervalDays = calculateReminderIntervalDays(connection, adminId, bodyPartName);
+        String updateSql = """
+            UPDATE reminders
+            SET scheduled_time = ?, repeat_interval_days = ?, note = NULL
+            WHERE user_id = ? AND label = ?
+            """;
+        try (PreparedStatement statement = connection.prepareStatement(updateSql)) {
+            statement.setString(1, dueToday.toString());
+            statement.setInt(2, intervalDays);
+            statement.setLong(3, adminId);
+            statement.setString(4, bodyPartName);
+            if (statement.executeUpdate() > 0) {
+                return;
+            }
+        }
+
+        String insertSql = "INSERT INTO reminders(user_id, label, scheduled_time, repeat_interval_days, note) VALUES (?, ?, ?, ?, ?)";
+        try (PreparedStatement statement = connection.prepareStatement(insertSql)) {
+            statement.setLong(1, adminId);
+            statement.setString(2, bodyPartName);
+            statement.setString(3, dueToday.toString());
+            statement.setInt(4, intervalDays);
+            statement.setNull(5, java.sql.Types.VARCHAR);
+            statement.executeUpdate();
+        }
+    }
+
+    private int calculateReminderIntervalDays(Connection connection, long adminId, String bodyPartName) throws SQLException {
+        LocalDate latestLogDate = findLatestBodyPartLogDate(connection, adminId, bodyPartName);
+        if (latestLogDate == null) {
+            return 5;
+        }
+
+        long daysSinceLatestLog = ChronoUnit.DAYS.between(latestLogDate, LocalDate.now());
+        return (int) Math.max(1, daysSinceLatestLog);
+    }
+
+    private LocalDate findLatestBodyPartLogDate(Connection connection, long userId, String bodyPartName) throws SQLException {
+        String sql = """
+            SELECT MAX(workout_sessions.session_date) AS latest_date
+            FROM workout_sessions
+            JOIN session_exercises ON session_exercises.session_id = workout_sessions.id
+            WHERE workout_sessions.user_id = ?
+              AND session_exercises.body_part_name = ?
+            """;
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setLong(1, userId);
+            statement.setString(2, bodyPartName);
+            try (ResultSet resultSet = statement.executeQuery()) {
+                if (!resultSet.next()) {
+                    return null;
+                }
+                String latestDate = resultSet.getString("latest_date");
+                return latestDate == null ? null : LocalDate.parse(latestDate);
+            }
+        }
+    }
+
+    private void insertAdminReportSessions(Connection connection, long adminId, List<WorkoutSession> sessions) throws SQLException {
         String sessionSql = "INSERT INTO workout_sessions(user_id, session_date, session_name) VALUES (?, ?, ?)";
         String exerciseSql = "INSERT INTO session_exercises(session_id, name, type, body_part_name) VALUES (?, ?, ?, ?)";
         String setSql = "INSERT INTO session_sets(session_exercise_id, metric1, metric2) VALUES (?, ?, ?)";
@@ -419,21 +564,111 @@ public class SQLiteRepository {
         try (PreparedStatement sessionStatement = connection.prepareStatement(sessionSql, Statement.RETURN_GENERATED_KEYS);
              PreparedStatement exerciseStatement = connection.prepareStatement(exerciseSql, Statement.RETURN_GENERATED_KEYS);
              PreparedStatement setStatement = connection.prepareStatement(setSql)) {
-            long sessionId = insertSession(sessionStatement, adminId, session);
-            for (Exercise exercise : session.getExercises()) {
-                long sessionExerciseId = insertSessionExercise(exerciseStatement, sessionId, exercise);
-                insertExerciseSets(setStatement, sessionExerciseId, exercise);
+            for (WorkoutSession session : sessions) {
+                long sessionId = insertSession(sessionStatement, adminId, session);
+                for (Exercise exercise : session.getExercises()) {
+                    long sessionExerciseId = insertSessionExercise(exerciseStatement, sessionId, exercise);
+                    insertExerciseSets(setStatement, sessionExerciseId, exercise);
+                }
             }
         }
+    }
+
+    private ArrayList<WorkoutSession> buildAdminReportSessions() {
+        ArrayList<WorkoutSession> sessions = new ArrayList<>();
+
+        WorkoutSession upperFoundation = new WorkoutSession(LocalDate.now().minusDays(12), "Upper Body Foundation");
+        addExerciseToSession(upperFoundation, "Chest", "Bench Press", ExerciseType.STRENGTH, 8, 58);
+        addExerciseToSession(upperFoundation, "Back", "Dumbbell Row", ExerciseType.STRENGTH, 10, 24);
+        sessions.add(upperFoundation);
+
+        WorkoutSession legStrength = new WorkoutSession(LocalDate.now().minusDays(11), "Leg Strength");
+        addExerciseToSession(legStrength, "Legs", "Squat", ExerciseType.STRENGTH, 6, 88);
+        addExerciseToSession(legStrength, "Legs", "Lunge", ExerciseType.STRENGTH, 12, 22);
+        sessions.add(legStrength);
+
+        WorkoutSession backEndurance = new WorkoutSession(LocalDate.now().minusDays(10), "Back Endurance");
+        addExerciseToSession(backEndurance, "Back", "Rowing Machine", ExerciseType.ENDURANCE, 20, 138);
+        addExerciseToSession(backEndurance, "Back", "Deadlift", ExerciseType.STRENGTH, 5, 92);
+        sessions.add(backEndurance);
+
+        WorkoutSession pushVolume = new WorkoutSession(LocalDate.now().minusDays(9), "Push Volume");
+        addExerciseToSession(pushVolume, "Chest", "Bench Press", ExerciseType.STRENGTH, 10, 62);
+        addExerciseToSession(pushVolume, "Chest", "Chest Fly", ExerciseType.STRENGTH, 12, 16);
+        sessions.add(pushVolume);
+
+        WorkoutSession cardioBase = new WorkoutSession(LocalDate.now().minusDays(8), "Cardio Base");
+        addExerciseToSession(cardioBase, "Legs", "Treadmill Run", ExerciseType.CARDIO, 26, 4.4);
+        addExerciseToSession(cardioBase, "Core", "Cycling", ExerciseType.CARDIO, 22, 7.0);
+        sessions.add(cardioBase);
+
+        WorkoutSession pullStrength = new WorkoutSession(LocalDate.now().minusDays(7), "Pull Strength");
+        addExerciseToSession(pullStrength, "Back", "Deadlift", ExerciseType.STRENGTH, 5, 104);
+        addExerciseToSession(pullStrength, "Back", "Dumbbell Row", ExerciseType.STRENGTH, 9, 28);
+        sessions.add(pullStrength);
+
+        WorkoutSession coreConditioning = new WorkoutSession(LocalDate.now().minusDays(6), "Core Conditioning");
+        addExerciseToSession(coreConditioning, "Core", "Plank Hold", ExerciseType.ENDURANCE, 18, 132);
+        addExerciseToSession(coreConditioning, "Core", "Crunch", ExerciseType.STRENGTH, 24, 0);
+        sessions.add(coreConditioning);
+
+        WorkoutSession fullBodyLoad = new WorkoutSession(LocalDate.now().minusDays(5), "Full Body Load");
+        addExerciseToSession(fullBodyLoad, "Legs", "Squat", ExerciseType.STRENGTH, 7, 94);
+        addExerciseToSession(fullBodyLoad, "Chest", "Bench Press", ExerciseType.STRENGTH, 8, 66);
+        sessions.add(fullBodyLoad);
+
+        WorkoutSession legHypertrophy = new WorkoutSession(LocalDate.now().minusDays(4), "Leg Hypertrophy");
+        addExerciseToSession(legHypertrophy, "Legs", "Squat", ExerciseType.STRENGTH, 10, 78);
+        addExerciseToSession(legHypertrophy, "Legs", "Lunge", ExerciseType.STRENGTH, 14, 24);
+        sessions.add(legHypertrophy);
+
+        WorkoutSession rowingEndurance = new WorkoutSession(LocalDate.now().minusDays(3), "Rowing Endurance");
+        addExerciseToSession(rowingEndurance, "Back", "Rowing Machine", ExerciseType.ENDURANCE, 24, 146);
+        addExerciseToSession(rowingEndurance, "Legs", "Treadmill Run", ExerciseType.CARDIO, 18, 3.6);
+        sessions.add(rowingEndurance);
+
+        WorkoutSession chestFocus = new WorkoutSession(LocalDate.now().minusDays(2), "Chest Focus");
+        addExerciseToSession(chestFocus, "Chest", "Bench Press", ExerciseType.STRENGTH, 9, 68);
+        addExerciseToSession(chestFocus, "Chest", "Chest Fly", ExerciseType.STRENGTH, 14, 18);
+        sessions.add(chestFocus);
+
+        WorkoutSession finalReportMix = new WorkoutSession(LocalDate.now().minusDays(1), "Final Report Mix");
+        addExerciseToSession(finalReportMix, "Back", "Deadlift", ExerciseType.STRENGTH, 6, 108);
+        addExerciseToSession(finalReportMix, "Core", "Plank Hold", ExerciseType.ENDURANCE, 20, 140);
+        sessions.add(finalReportMix);
+
+        return sessions;
+    }
+
+    private List<Double> buildAdminWeightHistory() {
+        return List.of(68.0, 68.4, 68.8, 69.0, 69.3, 69.7, 70.0, 70.4, 70.8, 70.3, 69.9, 69.5);
+    }
+
+    private LocalDate getAdminReportStartDate() {
+        return LocalDate.now().minusDays(12);
+    }
+
+    private void addExerciseToSession(
+        WorkoutSession session,
+        String bodyPartName,
+        String exerciseName,
+        ExerciseType type,
+        int firstMetric,
+        double secondMetric
+    ) {
+        BodyPart bodyPart = new BodyPart(bodyPartName);
+        Exercise exercise = bodyPart.createExercise(exerciseName, type);
+        exercise.addSet(firstMetric, secondMetric);
+        session.addExercise(exercise.copy());
     }
 
     private void seedAdminReminders(Connection connection, long adminId) throws SQLException {
         String sql = "INSERT INTO reminders(user_id, label, scheduled_time, repeat_interval_days, note) VALUES (?, ?, ?, ?, ?)";
         try (PreparedStatement statement = connection.prepareStatement(sql)) {
             statement.setLong(1, adminId);
-            statement.setString(2, "Chest");
-            statement.setString(3, LocalDateTime.now().plusDays(5).toString());
-            statement.setInt(4, 5);
+            statement.setString(2, "Legs");
+            statement.setString(3, LocalDate.now().atStartOfDay().toString());
+            statement.setInt(4, calculateReminderIntervalDays(connection, adminId, "Legs"));
             statement.setNull(5, java.sql.Types.VARCHAR);
             statement.addBatch();
 
@@ -637,6 +872,30 @@ public class SQLiteRepository {
         }
     }
 
+    private Long findOptionalUserId(Connection connection, String username) throws SQLException {
+        String sql = "SELECT id FROM users WHERE username = ?";
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setString(1, username);
+            try (ResultSet resultSet = statement.executeQuery()) {
+                if (!resultSet.next()) {
+                    return null;
+                }
+                return resultSet.getLong("id");
+            }
+        }
+    }
+
+    private boolean sessionExists(Connection connection, long userId, String sessionName) throws SQLException {
+        String sql = "SELECT 1 FROM workout_sessions WHERE user_id = ? AND session_name = ?";
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setLong(1, userId);
+            statement.setString(2, sessionName);
+            try (ResultSet resultSet = statement.executeQuery()) {
+                return resultSet.next();
+            }
+        }
+    }
+
     private long insertUser(Connection connection, String username, String password, double weight, double height) throws SQLException {
         String sql = "INSERT INTO users(username, password, weight, height) VALUES (?, ?, ?, ?)";
         try (PreparedStatement statement = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
@@ -650,8 +909,11 @@ public class SQLiteRepository {
     }
 
     private void insertWeightHistory(Connection connection, long userId, List<Double> history) throws SQLException {
+        insertWeightHistory(connection, userId, history, LocalDate.now().minusDays(Math.max(0, history.size() - 1)));
+    }
+
+    private void insertWeightHistory(Connection connection, long userId, List<Double> history, LocalDate startDate) throws SQLException {
         String sql = "INSERT INTO weight_history(user_id, record_order, weight, record_date) VALUES (?, ?, ?, ?)";
-        LocalDate startDate = LocalDate.now().minusDays(Math.max(0, history.size() - 1));
         try (PreparedStatement statement = connection.prepareStatement(sql)) {
             for (int i = 0; i < history.size(); i++) {
                 statement.setLong(1, userId);
@@ -661,6 +923,14 @@ public class SQLiteRepository {
                 statement.addBatch();
             }
             statement.executeBatch();
+        }
+    }
+
+    private void updateUserWeight(Connection connection, long userId, double weight) throws SQLException {
+        try (PreparedStatement statement = connection.prepareStatement("UPDATE users SET weight = ? WHERE id = ?")) {
+            statement.setDouble(1, weight);
+            statement.setLong(2, userId);
+            statement.executeUpdate();
         }
     }
 

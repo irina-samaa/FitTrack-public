@@ -18,8 +18,6 @@
     <Label text="FitTrack" styleClass="app-title" />
     <Label text="Your personal fitness companion" styleClass="subtitle-text" />
 
-    <Separator style="-fx-background-color: #333; -fx-padding: 4 0;" />
-
     <!-- Username Field -->
     <VBox spacing="4">
         <Label text="USERNAME" styleClass="field-label" />
@@ -58,9 +56,5 @@
             styleClass="accent-button"
             onAction="#handleCreateAccount"
             maxWidth="Infinity" />
-
-    <Label text="Seeded accounts: admin / 1234 and testuser / 1234"
-           styleClass="hint-text"
-           style="-fx-text-fill: #555;" />
 
 </VBox>

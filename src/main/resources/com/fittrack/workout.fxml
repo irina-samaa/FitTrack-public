@@ -54,10 +54,12 @@
                 <TextField fx:id="newExerciseField"
                            promptText="Exercise name..."
                            styleClass="dark-input"
+                           prefWidth="190"
                            HBox.hgrow="ALWAYS" />
                 <ComboBox fx:id="exerciseTypeComboBox"
                           styleClass="dark-combo"
-                          prefWidth="108" />
+                          prefWidth="124"
+                          minWidth="124" />
                 <Button text="+"
                         styleClass="accent-button"
                         onAction="#addExercise" />

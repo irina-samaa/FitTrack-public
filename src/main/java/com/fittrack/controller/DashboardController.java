@@ -24,6 +24,7 @@ public class DashboardController {
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("EEEE, MMM d, yyyy");
     private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm:ss");
+    private static final DateTimeFormatter REMINDER_TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm");
     private static final DateTimeFormatter SHORT_DATE_FORMATTER = DateTimeFormatter.ofPattern("MMM d");
 
     @FXML
@@ -110,6 +111,13 @@ public class DashboardController {
             return;
         }
 
+        if (service.getWeightHistory().isEmpty()) {
+            bmiValueLabel.setText("0");
+            bmiCategoryLabel.setText("No measurements yet");
+            bmiCategoryLabel.setStyle("-fx-text-fill: #AAAAAA;");
+            return;
+        }
+
         bmiValueLabel.setText(String.format("%.1f", service.calculateBMI()));
         String category = service.getBmiCategory();
         bmiCategoryLabel.setText(category);
@@ -141,8 +149,15 @@ public class DashboardController {
             return;
         }
 
+        LocalDateTime scheduledTime = next.getReminder().getScheduledTime();
+        if (scheduledTime.toLocalDate().equals(LocalDate.now())) {
+            reminderTitleLabel.setText("Due today: " + next.getName());
+            reminderTimeLabel.setText("Scheduled for today at " + scheduledTime.format(REMINDER_TIME_FORMATTER));
+            return;
+        }
+
         reminderTitleLabel.setText(next.getName());
-        reminderTimeLabel.setText(next.getReminder().getScheduledTime().format(FORMATTER));
+        reminderTimeLabel.setText(scheduledTime.format(FORMATTER));
     }
 
     private void configureWorkloadLists() {

@@ -159,12 +159,20 @@ public class FitnessTrackerService {
         return progressTracker.getMovingAverage(requireCurrentUser(), window);
     }
 
-    public ArrayList<Double> generateWeightGraph() {
-        return progressTracker.generateWeightGraph(requireCurrentUser());
+    public ArrayList<Double> getChartWeightValues() {
+        return progressTracker.getChartWeightValues(requireCurrentUser());
+    }
+
+    public ArrayList<Double> getChartWeightMovingAverage(int window) {
+        return progressTracker.getChartWeightMovingAverage(requireCurrentUser(), window);
     }
 
     public ArrayList<String> getProgressLabels() {
         return progressTracker.getLabels(requireCurrentUser());
+    }
+
+    public ArrayList<String> getChartWeightLabels() {
+        return progressTracker.getChartWeightLabels(requireCurrentUser());
     }
 
     public ArrayList<String> getWorkloadProgressLabels() {
@@ -172,9 +180,29 @@ public class FitnessTrackerService {
         return progressTracker.getWorkloadLabels(dataStore.getSessions());
     }
 
+    public ArrayList<String> getChartWorkloadLabels() {
+        requireCurrentUser();
+        return progressTracker.getChartWorkloadLabels(dataStore.getSessions());
+    }
+
     public ArrayList<Double> getDailyWorkloads() {
         requireCurrentUser();
         return progressTracker.getDailyWorkloads(dataStore.getSessions());
+    }
+
+    public ArrayList<Double> getChartWorkloadValues() {
+        requireCurrentUser();
+        return progressTracker.getChartDailyWorkloads(dataStore.getSessions());
+    }
+
+    public ArrayList<Double> getWorkloadMovingAverage(int window) {
+        requireCurrentUser();
+        return progressTracker.getWorkloadMovingAverage(dataStore.getSessions(), window);
+    }
+
+    public ArrayList<Double> getChartWorkloadMovingAverage(int window) {
+        requireCurrentUser();
+        return progressTracker.getChartWorkloadMovingAverage(dataStore.getSessions(), window);
     }
 
     public double getAverageWorkload() {

@@ -12,22 +12,50 @@ import java.util.TreeMap;
 public class ProgressTracker {
     private static final DateTimeFormatter LABEL_FORMATTER = DateTimeFormatter.ofPattern("MMM d");
 
-    public ArrayList<Double> generateWeightGraph(User user) {
-        return getMovingAverage(user, 3);
+    public ArrayList<Double> getMovingAverage(User user, int window) {
+        return calculateMovingAverage(user.getWeightHistory(), window);
     }
 
-    public ArrayList<Double> getMovingAverage(User user, int window) {
-        List<Double> history = user.getWeightHistory();
+    public ArrayList<Double> getChartWeightValues(User user) {
+        ArrayList<Double> weights = new ArrayList<>();
+        Map<LocalDate, Double> weightsByDate = weightsByDate(user);
+        if (weightsByDate.isEmpty()) {
+            return weights;
+        }
+
+        double currentWeight = weightsByDate.get(weightsByDate.keySet().iterator().next());
+        for (LocalDate date = weightsByDate.keySet().iterator().next(); !date.isAfter(LocalDate.now()); date = date.plusDays(1)) {
+            if (weightsByDate.containsKey(date)) {
+                currentWeight = weightsByDate.get(date);
+            }
+            weights.add(currentWeight);
+        }
+        return weights;
+    }
+
+    public ArrayList<Double> getChartWeightMovingAverage(User user, int window) {
+        return calculateMovingAverage(getChartWeightValues(user), window);
+    }
+
+    public ArrayList<Double> getWorkloadMovingAverage(Collection<WorkoutSession> sessions, int window) {
+        return calculateMovingAverage(getDailyWorkloads(sessions), window);
+    }
+
+    public ArrayList<Double> getChartWorkloadMovingAverage(Collection<WorkoutSession> sessions, int window) {
+        return calculateMovingAverage(getChartDailyWorkloads(sessions), window);
+    }
+
+    private ArrayList<Double> calculateMovingAverage(List<Double> values, int window) {
         ArrayList<Double> result = new ArrayList<>();
         if (window <= 0) {
             throw new IllegalArgumentException("Window must be greater than 0.");
         }
 
-        for (int i = 0; i < history.size(); i++) {
+        for (int i = 0; i < values.size(); i++) {
             int start = Math.max(0, i - window + 1);
             double sum = 0;
             for (int j = start; j <= i; j++) {
-                sum += history.get(j);
+                sum += values.get(j);
             }
             result.add(sum / (i - start + 1));
         }
@@ -42,6 +70,10 @@ public class ProgressTracker {
         return labels;
     }
 
+    public ArrayList<String> getChartWeightLabels(User user) {
+        return labelsForDates(getContinuousWeightDates(user));
+    }
+
     public ArrayList<String> getWorkloadLabels(Collection<WorkoutSession> sessions) {
         ArrayList<String> labels = new ArrayList<>();
         for (var date : dailyWorkloadsByDate(sessions).keySet()) {
@@ -50,8 +82,25 @@ public class ProgressTracker {
         return labels;
     }
 
+    public ArrayList<String> getChartWorkloadLabels(Collection<WorkoutSession> sessions) {
+        return labelsForDates(getContinuousWorkloadDates(sessions));
+    }
+
     public ArrayList<Double> getDailyWorkloads(Collection<WorkoutSession> sessions) {
         return new ArrayList<>(dailyWorkloadsByDate(sessions).values());
+    }
+
+    public ArrayList<Double> getChartDailyWorkloads(Collection<WorkoutSession> sessions) {
+        ArrayList<Double> dailyWorkloads = new ArrayList<>();
+        Map<LocalDate, Double> workloadsByDate = dailyWorkloadsByDate(sessions);
+        if (workloadsByDate.isEmpty()) {
+            return dailyWorkloads;
+        }
+
+        for (LocalDate date = workloadsByDate.keySet().iterator().next(); !date.isAfter(LocalDate.now()); date = date.plusDays(1)) {
+            dailyWorkloads.add(workloadsByDate.getOrDefault(date, 0.0));
+        }
+        return dailyWorkloads;
     }
 
     public double getAverageWorkload(Collection<WorkoutSession> sessions) {
@@ -98,6 +147,48 @@ public class ProgressTracker {
             dailyWorkloads.merge(LocalDate.parse(session.getDate()), session.getTotalWorkload(), Double::sum);
         }
         return dailyWorkloads;
+    }
+
+    private Map<LocalDate, Double> weightsByDate(User user) {
+        Map<LocalDate, Double> weightsByDate = new TreeMap<>();
+        List<Double> weights = user.getWeightHistory();
+        List<LocalDate> dates = user.getWeightHistoryDates();
+        for (int i = 0; i < weights.size(); i++) {
+            weightsByDate.put(dates.get(i), weights.get(i));
+        }
+        return weightsByDate;
+    }
+
+    private ArrayList<LocalDate> getContinuousWeightDates(User user) {
+        Map<LocalDate, Double> weightsByDate = weightsByDate(user);
+        if (weightsByDate.isEmpty()) {
+            return new ArrayList<>();
+        }
+        return continuousDatesFrom(weightsByDate.keySet().iterator().next());
+    }
+
+    private ArrayList<LocalDate> getContinuousWorkloadDates(Collection<WorkoutSession> sessions) {
+        Map<LocalDate, Double> workloadsByDate = dailyWorkloadsByDate(sessions);
+        if (workloadsByDate.isEmpty()) {
+            return new ArrayList<>();
+        }
+        return continuousDatesFrom(workloadsByDate.keySet().iterator().next());
+    }
+
+    private ArrayList<LocalDate> continuousDatesFrom(LocalDate startDate) {
+        ArrayList<LocalDate> dates = new ArrayList<>();
+        for (LocalDate date = startDate; !date.isAfter(LocalDate.now()); date = date.plusDays(1)) {
+            dates.add(date);
+        }
+        return dates;
+    }
+
+    private ArrayList<String> labelsForDates(List<LocalDate> dates) {
+        ArrayList<String> labels = new ArrayList<>();
+        for (LocalDate date : dates) {
+            labels.add(LABEL_FORMATTER.format(date));
+        }
+        return labels;
     }
 
     private Map<LocalDate, Integer> dailySessionCountsByDate(Collection<WorkoutSession> sessions) {

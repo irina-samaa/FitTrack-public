@@ -39,7 +39,7 @@ public class Main extends Application {
         Stage loginStage = new Stage();
         loginStage.initModality(Modality.APPLICATION_MODAL);
         loginStage.setTitle("FitTrack - Login");
-        Scene scene = new Scene(root, 400, 340);
+        Scene scene = new Scene(root, 400, 390);
         scene.getStylesheets().add(
             Main.class.getResource("/com/fittrack/styles.css").toExternalForm());
         loginStage.setScene(scene);

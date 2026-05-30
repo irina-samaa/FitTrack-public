@@ -23,6 +23,11 @@ public class HealthController {
             return;
         }
 
+        if (user.getWeightHistory().isEmpty()) {
+            showEmptyMeasurements();
+            return;
+        }
+
         currentWeightLabel.setText("Current weight: " + user.getWeight() + " kg");
         currentHeightLabel.setText("Current height: " + user.getHeight() + " cm");
         weightField.setText(String.valueOf(user.getWeight()));
@@ -75,6 +80,24 @@ public class HealthController {
 
         recommendationLabel.setStyle("-fx-text-fill: #AAAAAA;");
         recommendationLabel.setText(service.getHealthRecommendation());
+    }
+
+    private void showEmptyMeasurements() {
+        currentWeightLabel.setText("Current weight: 0 kg");
+        currentHeightLabel.setText("Current height: 0 cm");
+        weightField.clear();
+        heightField.clear();
+        bmiResultLabel.setText("0");
+        bmiCategoryBadge.setText("No measurements yet");
+        bmiCategoryBadge.setStyle(
+            "-fx-background-color: #AAAAAA22;" +
+            "-fx-text-fill: #AAAAAA;" +
+            "-fx-border-color: #AAAAAA;" +
+            "-fx-border-radius: 6; -fx-background-radius: 6;" +
+            "-fx-padding: 4 12;"
+        );
+        recommendationLabel.setStyle("-fx-text-fill: #AAAAAA;");
+        recommendationLabel.setText("Enter your weight and height to calculate BMI.");
     }
 
     private void showError(String message) {

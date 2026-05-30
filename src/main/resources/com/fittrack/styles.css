@@ -8,7 +8,7 @@
 .root {
     -fx-background-color: #0F0F0F;
     -fx-font-family: "Roboto Condensed", "JetBrains Mono", "Consolas", monospace;
-    -fx-font-size: 13px;
+    -fx-font-size: 14px;
     -fx-text-fill: #FFFFFF;
 }
 
@@ -33,7 +33,7 @@
 }
 
 .subtitle-text {
-    -fx-font-size: 13px;
+    -fx-font-size: 14px;
     -fx-text-fill: #AAAAAA;
 }
 
@@ -123,7 +123,7 @@
 }
 
 .chart-title-label {
-    -fx-font-size: 13px;
+    -fx-font-size: 14px;
     -fx-font-weight: bold;
     -fx-text-fill: #FFD2BF;
 }
@@ -165,7 +165,7 @@
 }
 
 .card-subtitle {
-    -fx-font-size: 13px;
+    -fx-font-size: 14px;
     -fx-text-fill: #AAAAAA;
 }
 
@@ -196,7 +196,7 @@
     -fx-background-color: #FF4500;
     -fx-text-fill: #FFFFFF;
     -fx-font-weight: bold;
-    -fx-font-size: 13px;
+    -fx-font-size: 14px;
     -fx-background-radius: 6px;
     -fx-padding: 8 20;
     -fx-cursor: hand;
@@ -272,7 +272,7 @@
 .sidebar-button {
     -fx-background-color: transparent;
     -fx-text-fill: #AAAAAA;
-    -fx-font-size: 13px;
+    -fx-font-size: 14px;
     -fx-alignment: CENTER_LEFT;
     -fx-padding: 10 12;
     -fx-background-radius: 6px;
@@ -500,7 +500,7 @@
 .dark-combo .list-cell {
     -fx-background-color: transparent;
     -fx-text-fill: #FFFFFF;
-    -fx-padding: 8 12;
+    -fx-padding: 8 8;
 }
 
 .dark-combo .arrow-button {
@@ -509,7 +509,7 @@
     -fx-border-color: #333333;
     -fx-border-width: 0 0 0 1px;
     -fx-border-radius: 0 6px 6px 0;
-    -fx-padding: 0 10;
+    -fx-padding: 0 7;
 }
 
 .dark-combo:focused .arrow-button,
@@ -532,7 +532,7 @@
 .combo-box-popup .list-cell {
     -fx-background-color: #111111;
     -fx-text-fill: #E8E8E8;
-    -fx-padding: 8 12;
+    -fx-padding: 8 10;
 }
 
 .combo-box-popup .list-cell:hover {

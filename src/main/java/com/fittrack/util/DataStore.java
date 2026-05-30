@@ -133,7 +133,7 @@ public class DataStore {
         boolean changed = false;
 
         BodyPart chest = findOrCreateBodyPart("Chest");
-        changed |= addDefaultExercise(chest, "Bench Press", ExerciseType.STRENGTH);
+        changed |= chest.removeExercise("Bench Press");
         changed |= addDefaultExercise(chest, "Push Up", ExerciseType.STRENGTH);
         changed |= addDefaultExercise(chest, "Chest Fly", ExerciseType.STRENGTH);
 
